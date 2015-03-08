@@ -54,25 +54,25 @@ canvas {
     width:320px;                   /* canvas screen width */
 }
 
-@media screen and (min-width:400px) {
-    .app   { height:200px; width:400px; }
-    canvas { height:200px; width:400px; }
-}
-
-@media screen and (min-width:640px) {
-    .app   { height:320px; width:640px; }
-    canvas { height:320px; width:640px; }
-}
-
-@media screen and (min-width:800px) {
-    .app   { height:400px; width:800px; }
-    canvas { height:400px; width:800px; }
-}
-
-@media screen and (min-width:1200px) {
-    .app   { height:600px; width:1200px; }
-    canvas { height:600px; width:1200px; }
-}
+//@media screen and (min-width:400px) {
+//    .app   { height:200px; width:400px; }
+//    canvas { height:200px; width:400px; }
+//}
+//
+//@media screen and (min-width:640px) {
+//    .app   { height:320px; width:640px; }
+//    canvas { height:320px; width:640px; }
+//}
+//
+//@media screen and (min-width:800px) {
+//    .app   { height:400px; width:800px; }
+//    canvas { height:400px; width:800px; }
+//}
+//
+//@media screen and (min-width:1200px) {
+//    .app   { height:600px; width:1200px; }
+//    canvas { height:600px; width:1200px; }
+//}
 
 /* Landscape layout (with min-width) */
 @media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {

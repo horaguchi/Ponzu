@@ -13,8 +13,13 @@ Ponzu.prototype.addCanvas = function (element) {
     this.fontX = 15; this.fontY = 30;
   }
   this.canvasElement = document.createElement('canvas');
-  this.canvasElement.setAttribute('width', this.fontX * 80);
+  this.canvasElement.setAttribute('width',  this.fontX * 80);
   this.canvasElement.setAttribute('height', this.fontY * 20);
+  element.appendChild(this.canvasElement);
+  element.style.width  = (this.fontX * 80) + 'px';
+  element.style.height = (this.fontY * 20) + 'px';
+  this.canvasElement.style.width  = (this.fontX * 80) + 'px';
+  this.canvasElement.style.height = (this.fontY * 20) + 'px';
   this.canvasContext = this.canvasElement.getContext("2d");
   this.canvasContext.font = this.fontY + "px Monospace";
 
@@ -29,7 +34,6 @@ Ponzu.prototype.addCanvas = function (element) {
     var rect = e.target.getBoundingClientRect();
     ponzu.point(e.clientX - rect.left, e.clientY - rect.top);
   });
-  element.appendChild(this.canvasElement);
 };
 
 Ponzu.prototype.drawMap = function () {
