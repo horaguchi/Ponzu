@@ -17,35 +17,75 @@
  * under the License.
  */
 var app = {
-    // Application Constructor
-    initialize: function() {
-        this.bindEvents();
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+  // Application Constructor
+  initialize: function() {
+    this.bindEvents();
+  },
+  // Bind Event Listeners
+  //
+  // Bind any events that are required on startup. Common events are:
+  // 'load', 'deviceready', 'offline', and 'online'.
+  bindEvents: function() {
+    document.addEventListener('deviceready', this.onDeviceReady, false);
+  },
+  // deviceready Event Handler
+  //
+  // The scope of 'this' is the event. In order to call the 'receivedEvent'
+  // function, we must explicitly call 'app.receivedEvent(...);'
+  onDeviceReady: function() {
+    app.receivedEvent('deviceready');
+  },
+  // Update DOM on a Received Event
+  receivedEvent: function(id) {
+    console.log('Received Event: ' + id);
+    var screen = document.getElementById('screen');
+    var context = screen.getContext("2d");
+    context.font="10px Monospace";
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
+    var k = 0;
+    var newMap = function () {
+      var map = [];
+      ++k;
+      for (var i = 0; i < 20; ++i) {
+        var row = [];
+        for (var j = 0; j < 80; ++j) {
+          row.push( (i + j + k) % 30 == 0 ? '+' : '.' );
+        }
+        map.push(row);
+      }
+      return map;
     }
+
+    var map = newMap();
+    var d1 = new Date;
+    var t = setInterval(function () {
+      var old_map = map;
+      map = newMap();
+      for (var y = 0; y < 20; ++y) {
+        for (var x = 0; x < 80; ++x) {
+          var str = map[y][x];
+          if (str == old_map[y][x]) {
+            continue;
+          }
+          context.clearRect(5 * x, 10 * y, 5, 10);
+          if (str == '+') {
+            context.fillStyle = 'red';
+          } else {
+            context.fillStyle = 'black';
+          }
+          context.fillText(str, 5 * x, 10 * (y + 1));
+        }
+      }
+
+      if (k > 1000) {
+        clearInterval(t);
+        var d2 = new Date;
+        context.clearRect(0, 0, 400, 10);
+        context.fillText(parseInt(1000000 / (d2.getTime() - d1.getTime())), 10, 10);
+        console.log('Done: ' + d1 + ' ' + d2);
+      }
+    }, 0); 
+  }
 };
 
 app.initialize();
