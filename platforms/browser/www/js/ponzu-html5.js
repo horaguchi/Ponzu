@@ -3,12 +3,18 @@ Ponzu.prototype.addCanvas = function (element) {
   var max_width = window.innerWidth;
   if (max_width < 400) {
     this.fontX = 4; this.fontY = 8;
-  } else if (400 <= max_width && max_width < 640) {
+  } else if (400 <= max_width - 10 && max_width - 10  < 480) {
     this.fontX = 5; this.fontY = 10;
-  } else if (640 <= max_width && max_width < 800) {
+  } else if (480 <= max_width - 10 && max_width - 10  < 560) {
+    this.fontX = 6; this.fontY = 12;
+  } else if (560 <= max_width - 10 && max_width - 10  < 640) {
+    this.fontX = 7; this.fontY = 14;
+  } else if (640 <= max_width - 10 && max_width - 10  < 800) {
     this.fontX = 8; this.fontY = 16;
-  } else if (800 <= max_width && max_width < 600) {
+  } else if (800 <= max_width - 10 && max_width - 10  < 960) {
     this.fontX = 10; this.fontY = 20;
+  } else if (960 <= max_width - 10 && max_width - 10  < 1200) {
+    this.fontX = 12; this.fontY = 24;
   } else if (1200 <= max_width) {
     this.fontX = 15; this.fontY = 30;
   }
