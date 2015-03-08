@@ -49,29 +49,29 @@ body {
     padding:0px;
     margin:auto;
 }
-canvas#screen {
+canvas {
     height:160px;                  /* canvas screen height */
     width:320px;                   /* canvas screen width */
 }
 
 @media screen and (min-width:400px) {
-    .app          { height:200px; width:400px; }
-    canvas#screen { height:200px; width:400px; }
+    .app   { height:200px; width:400px; }
+    canvas { height:200px; width:400px; }
 }
 
-@media screen and (min-width:600px) {
-    .app          { height:300px; width:600px; }
-    canvas#screen { height:300px; width:600px; }
+@media screen and (min-width:640px) {
+    .app   { height:320px; width:640px; }
+    canvas { height:320px; width:640px; }
 }
 
 @media screen and (min-width:800px) {
-    .app          { height:400px; width:800px; }
-    canvas#screen { height:400px; width:800px; }
+    .app   { height:400px; width:800px; }
+    canvas { height:400px; width:800px; }
 }
 
 @media screen and (min-width:1200px) {
-    .app          { height:600px; width:1200px; }
-    canvas#screen { height:600px; width:1200px; }
+    .app   { height:600px; width:1200px; }
+    canvas { height:600px; width:1200px; }
 }
 
 /* Landscape layout (with min-width) */

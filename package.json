@@ -1,0 +1,38 @@
+{
+  "name": "Ponzu",
+  "version": "0.0.1",
+  "description": "A roguelike turn-based Ponzu",
+  "keywords": [
+    "roguelike",
+    "turn-based",
+    "strategy",
+    "TBS",
+    "game"
+  ],
+  "homepage": "https://github.com/horaguchi/Ponzu",
+  "bugs": {
+    "url": "https://github.com/horaguchi/Ponzu/issues"
+  },
+  "license": "MIT",
+  "author": "Koji Horaguchi <koji.horaguchi@gmail.com> (http://horaguchi.github.io/)",
+  "main": "./ponzu.js",
+  "bin": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/horaguchi/ponzu.git"
+  },
+  "scripts": {
+    "prepublish": "node ./scripts/prepublish/browserify.js"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "pathfinding": "~0.4.16",
+    "blessed": "~0.0.38"
+  },
+  "devDependencies": {
+    "browserify": "~8.1.1"
+  }
+}
