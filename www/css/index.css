@@ -43,15 +43,20 @@ body {
     top:0;
     right:0;
     bottom:0;
-    height:200px;                  /* canvas screen height */
-    width:400px;                   /* canvas screen width */
+    height:160px;                  /* canvas screen height */
+    width:320px;                   /* canvas screen width */
     text-align:center;
     padding:0px;
     margin:auto;
 }
 canvas#screen {
-    height:200px;                  /* canvas screen height */
-    width:400px;                   /* canvas screen width */
+    height:160px;                  /* canvas screen height */
+    width:320px;                   /* canvas screen width */
+}
+
+@media screen and (min-width:400px) {
+    .app          { height:200px; width:400px; }
+    canvas#screen { height:200px; width:400px; }
 }
 
 @media screen and (min-width:600px) {
