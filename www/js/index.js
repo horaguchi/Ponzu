@@ -40,7 +40,6 @@ var app = {
     console.log('Received Event: ' + id);
     var ponzu = new Ponzu();
     ponzu.addCanvas(document.getElementById('app_e'));
-    ponzu.drawMap();
   }
 };
 
