@@ -81,13 +81,13 @@ Ponzu.prototype.drawStatus = function () {
 Ponzu.prototype.drawMap = function () {
   var context = this.canvasContext;
   var map = this.map;
-  var old_map = this.old_map;
+  var old_map = this.oldMap;
   var font_x = this.fontX, font_y = this.fontY;
 
   for (var y = 0; y < 15; ++y) {
     for (var x = 0; x < 80; ++x) {
       var str = map[y][x];
-      if (str == old_map[y][x]) {
+      if (old_map && str == old_map[y][x]) {
         continue;
       }
       context.clearRect(font_x * x, font_y * (y + 1), font_x, font_y);
@@ -99,7 +99,7 @@ Ponzu.prototype.drawMap = function () {
       context.fillText(str, font_x * x, font_y * (y + 2)); // + 1 is log line
     }
   }
-  this.old_map = map.map(function (row) { return row.concat(); });
+  this.oldMap = map.map(function (row) { return row.concat(); });
 };
 
 

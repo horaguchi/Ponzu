@@ -3,14 +3,21 @@ var PF = require("pathfinding");
 
 var Ponzu = function () {
   this.map = this.newMap();
-  this.old_map = this.newMap(true);
+  this.matrix = this.map.map(function (row) {
+    return row.map(function (tile) { return tile == '.' ? false : true });
+  });
   this.turn = 0;
   this.gold = 0;
   this.log = "Welcome to Ponzu."
 
   this.playerNum = 0;
   this.enemyNum = 0;
-  this.queue = {};
+  this.queue = [];
+
+  // ライブラリ読み込み
+  this.finder = new PF.AStarFinder({
+    diagonalMovement: PF.DiagonalMovement.Always
+  });
 };
 
 Ponzu.UIMap = [
@@ -28,6 +35,8 @@ Ponzu.prototype.newMap = function (empty) {
     }
     map.push(row);
   }
+  map[2][2] = '<';
+  map[13][70] = '>';
   return map;
 };
 
@@ -37,14 +46,17 @@ Ponzu.prototype.build = function (type, is_player) {
     isPlayer: is_player,
     created: this.turn,
     dead: false,
+    actions: [ ['move', 2, 2 ], [ 'move', 70, 13 ] ],
+    state: 0,
     x: 40,
     y: 7
   };
   var map = this.map;
   if (map[7][40] == ".") {
     map[7][40] = "@";
+    this.matrix[7][40] = true;
     ++this.playerNum;
-    this._addQueue(character, 0);
+    this.queue.push(character);
     return true;
   }
 };
@@ -52,41 +64,49 @@ Ponzu.prototype.build = function (type, is_player) {
 // called after 2. user input
 Ponzu.prototype.next = function () {
   // 3. character action
-  if (Array.isArray(this.queue[this.turn])) {
-    this.queue[this.turn].forEach(function (character) {
-      if (!character.dead) {
-        this._action(character);
-      }
-    },this);
-  }
+  this.queue = this.queue.filter(function (character) {
+    this._action(character);
+    if (!character.dead) {
+      return true;
+    }
+  }, this);
 
   // next turn
-  delete this.queue[this.turn];
+  //delete this.queue[this.turn];
   ++this.turn;
 
   // 1. check game over
   
 };
 
-Ponzu.prototype._addQueue = function (character, add_turn) {
-  var next_turn = this.turn + add_turn;
-  (Array.isArray(this.queue[next_turn]) ? this.queue[next_turn] : (this.queue[next_turn] = [])).push(character);
-};
-
 Ponzu.prototype._action = function (character) {
-  var actioned = false;
+  var action = character.actions[character.state];
   var map = this.map;
-  var x = character.x, y = character.y;
-  // random walk
-  x += Math.floor( Math.random() * 3 ) - 1;
-  y += Math.floor( Math.random() * 3 ) - 1;
-  if (0 <= x && x < 80 && 0 <= y && y < 15 && map[y][x] == '.') {
-    map[character.y][character.x] = '.';
-    character.x = x; character.y = y;
-    map[y][x] = '@';
-    actioned = true;
+  var matrix = this.matrix;
+
+  if (action[0] == 'move') {
+    var from_x = character.x, from_y = character.y;
+    var to_x = action[1], to_y = action[2];
+    var grid = new PF.Grid(80, 15, matrix);
+    grid.setWalkableAt(to_x, to_y, true);
+    var path = this.finder.findPath(from_x, from_y, to_x, to_y, grid);
+    if (path.length > 2) { // path found
+      next_x = path[1][0];
+      next_y = path[1][1];
+      map[character.y][character.x] = '.';
+      matrix[character.y][character.x] = false;
+      character.x = next_x; character.y = next_y;
+      map[next_y][next_x] = '@';
+      matrix[next_y][next_x] = true;
+      this.log = to_x + ',' + to_y + ' -> ' + next_x + ',' + next_y + ' ' + Math.abs(to_x - next_x) + ' ' + Math.abs(to_y - next_y) + ' ' + character.state;
+      if (Math.abs(to_x - next_x) <= 1 && Math.abs(to_y - next_y) <= 1) {
+        ++character.state;
+        if (character.state == character.actions.length) {
+          character.state = 0;
+        }
+      }
+    }
   }
-  this._addQueue(character, actioned ? 1 : 1);
 };
 
 // for node.js, not for CommonJS
