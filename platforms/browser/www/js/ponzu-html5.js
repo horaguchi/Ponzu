@@ -27,7 +27,7 @@ Ponzu.prototype.addCanvas = function (element) {
   this.canvasElement.style.width  = (this.fontX * 80) + 'px';
   this.canvasElement.style.height = (this.fontY * 20) + 'px';
   this.canvasContext = this.canvasElement.getContext("2d");
-  this.canvasContext.font = this.fontY + "px Monospace";
+  this.canvasContext.font = (this.fontY - 2) + "px Monospace"; // for adjustment
   this.canvasContext.textBaseline = "ideographic";
 
   var ponzu = this;
@@ -52,10 +52,10 @@ Ponzu.prototype.addCanvas = function (element) {
 Ponzu.prototype.drawUI = function () {
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
-  var map = Ponzu.UIMap;
+  var ui_map = Ponzu.UIMap;
   for (var y = 0; y < 3; ++y) {
     for (var x = 0; x < 80; ++x) {
-      var str = map[y][x];
+      var str = ui_map[y][x];
       context.fillStyle = 'black';
       context.fillText(str, font_x * x, font_y * (y + 18)); // bottom 3 lines
     }
@@ -80,7 +80,7 @@ Ponzu.prototype.drawStatus = function () {
 
 Ponzu.prototype.drawMap = function () {
   var context = this.canvasContext;
-  var map = this.map;
+  var map = this.getMap();
   var old_map = this.oldMap;
   var font_x = this.fontX, font_y = this.fontY;
 
@@ -112,14 +112,14 @@ Ponzu.prototype.point = function (x, y) {
   if (my == 0) {
     // nothing
   } else if (1 <= my && my <= 16) { 
-    this.map[my - 1][mx] = '+';
-    this.log = 'You point (' + mx + ',' + (my - 1) + ').';
-    this.drawLog();
+    this.pointMap(mx, my - 1);
+
   } else if (16 < my) {
     if (17 <= mx && mx <= 30) {
       this.build();
       this.drawLog();
       this.drawStatus();
+
     } else if (65 <= mx && mx <= 78) {
       this.next();
       this.drawLog();
