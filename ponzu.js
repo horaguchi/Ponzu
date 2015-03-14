@@ -11,8 +11,7 @@ var Ponzu = function () {
   this.gold = 0;
   this.log = "Welcome to Ponzu 7DRL 2015 Ver."
 
-  this.playerNum = 0;
-  this.enemyNum = 0;
+  this.unitNum = 0;
   this.queue = [];
 
   this.finder = new PF.AStarFinder({
@@ -128,7 +127,9 @@ Ponzu.prototype.getCharacterWindowMap = function () {
   }
   var window_str = line +
     ' ' + this.map[character.y][character.x] + '                Location: (' + character.x + ', ' + character.y + ')' + line +
-    ' Group: ' + character.group + '         Name: ' + character.name + line +
+    (this.map[character.y][character.x] == '@'
+      ? ' Group: ' + character.group + '         Name: ' + character.name + line
+      : ' Type: ' + character.type + line) +
     ' ' + window_type[3].replace(/^\w/, function(c) { return c.toUpperCase(); }) + ':' + line + list + line;
   return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
 };
@@ -150,10 +151,25 @@ Ponzu.FIRST_BUILD_WINDOW = [
 ];
 
 Ponzu.prototype.getBuildWindowMap = function () {
-  return Ponzu.FIRST_BUILD_WINDOW;
+  var window_type = this.windowType;
+  var character = window_type[2];
   var line = '                                    \n';
-  var window_str = line + " Build" + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line;
-  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+  var list = '';
+  if (!character) {
+    return Ponzu.FIRST_BUILD_WINDOW;
+  }
+  var window_str = line +
+    ' ' + this.map[character.y][character.x] + '                Location: (' + character.x + ', ' + character.y + ')' + line +
+    (this.map[character.y][character.x] == '@'
+      ? ' Group: ' + character.group + '         Name: ' + character.name + line
+      : ' Type: ' + character.type + line) +
+    line + line + line + line + line + line + line + line;
+  var window_map = window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+  window_map[ 9] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
+  window_map[10] = [" ","|"," "," "," "," "," ","R","e","r","o","l","l"," ","t","h","i","s"," ","u","n","i","t"," ","(","$","1",")"," "," "," "," "," "," ","|"," "];
+  window_map[11] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
+  window_map[12] = [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "];
+  return window_map;
 };
 
 Ponzu.prototype.getResearchWindowMap = function () {
@@ -198,11 +214,25 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
         window_type[0] == 'center' && 22 <= point_x && point_x <= 57 && 1 <= point_y && point_y <= 13 ||
         window_type[0] == 'right'  && 42 <= point_x && point_x <= 77 && 1 <= point_y && point_y <= 13) {
       var window_x = point_x - (window_type[0] == 'left' ? 2 : window_type[0] == 'center' ? 22 : 42), window_y = point_y - 1;
+
+      // character window
       if (window_type[1] == 'character') {
         window_type[3] = window_type[3] == 'todo' ? 'inventory' : 'todo';
+
+      // build window
       } else if (window_type[1] == 'build') {
         if (1 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
-          this.log = 'Button ' + window_x + ',' + window_y;
+          var created_character = this.windowType[2];
+          if (created_character) { // reroll
+            this.map[created_character.y][created_character.x] = '.';
+            created_character.dead = true;
+            --this.unitNum;
+          }
+          created_character = this.build();
+          if (created_character) {
+            this.windowType[0] = created_character.x < 40 ? 'right' : 'left';
+            this.windowType[2] = created_character;
+          }
         }
       }
     } else {
@@ -221,6 +251,9 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y) {
   var nearest;
   var min = 10000;
   this.queue.some(function (value) {
+    if (value.dead) {
+      return false;
+    }
     if (value.x == point_x && value.y == point_y) {
       nearest = value;
       return true;
@@ -238,7 +271,7 @@ Ponzu.prototype.openBuildWindow = function (type, is_player) {
 
 };
 
-Ponzu.BUILD_LIST = [
+Ponzu.BUILD_TYPE_LIST = [
   ['@', 'a worker'],
   ['#', 'a soybean field'],
   ['#', 'a sudachi field'],
@@ -246,28 +279,59 @@ Ponzu.BUILD_LIST = [
   ['(', 'a juicer'],
   ['{', 'a brewery']
 ];
+
+Ponzu.isBuildFree = function (pos_x, pos_y, map) {
+  var x1 = pos_x - 1, x2 = pos_x, x3 = pos_x + 1;
+  var y1 = pos_y - 1, y2 = pos_y, y3 = pos_y + 1;
+  x1 = x1 < 0 ? 0 : x1;
+  y1 = y1 < 0 ? 0 : y1;
+  x3 = 79 < x3 ? 79 : x3;
+  y3 = 14 < y3 ? 14 : y3;
+
+  if (map[y1][x1] == '.' && map[y1][x2] == '.' && map[y1][x3] == '.' &&
+      map[y2][x1] == '.' && map[y2][x2] == '.' && map[y2][x3] == '.' &&
+      map[y3][x1] == '.' && map[y3][x2] == '.' && map[y3][x3] == '.') {
+    return true;
+  }
+};
 Ponzu.prototype.build = function () {
-  
+  var map = this.map;
+  var pos_list = [];
+  for (var y = 0; y < 15; ++y) {
+    for (var x = 0; x < 80; ++x) {
+      if (Ponzu.isBuildFree(x, y, map)) {
+        pos_list.push([x, y]);
+      }
+    }
+  }
+
+  if (pos_list.length == 0) {
+    return false;
+  }
+
+  var target_type = Ponzu.BUILD_TYPE_LIST[parseInt(Math.random() * Ponzu.BUILD_TYPE_LIST.length)];
+  var pos = pos_list[parseInt(Math.random() * pos_list.length)];
+  var pos_x = pos[0], pos_y = pos[1];
+
   var character = {
-    type: type,
+    type: target_type[1],
     created: this.turn,
     dead: false,
     name: this.chance.first(),
-    group: 1,
-    actions: [ ['move', 2, 2 ], [ 'move', 70, 13 ] ],
-    items: [],
+    group: parseInt(Math.random() * 10),
+    actions: [ ],
+    items: [ ],
     state: 0,
-    x: 40,
-    y: 7
+    x: pos_x,
+    y: pos_y
   };
-  var map = this.map;
-  if (map[7][40] == ".") {
-    map[7][40] = "@";
-    this.matrix[7][40] = true;
-    ++this.playerNum;
-    this.queue.push(character);
-    return true;
-  }
+  map[pos_y][pos_x] = target_type[0];
+  this.matrix[pos_y][pos_x] = true;
+  ++this.unitNum;
+  this.queue.push(character);
+  this.makeVisible(pos_x, pos_y, map);
+  this.log = "You build " + target_type[1] + ".";
+  return character;
 };
 
 // called after 2. user input

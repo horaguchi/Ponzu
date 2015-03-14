@@ -101,7 +101,7 @@ Ponzu.prototype.drawStatus = function () {
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
   context.clearRect(0, font_y * 16, font_x * 80, font_y);
-  context.fillText('Turn:' + this.turn + '  $:' + this.gold + '  @:' + this.playerNum, 0, font_y * 17); // 17th line
+  context.fillText('Turn:' + this.turn + '  $:' + this.gold + '  Units:' + this.unitNum, 0, font_y * 17); // 17th line
 };
 
 Ponzu.prototype.drawMap = function (initial) {
