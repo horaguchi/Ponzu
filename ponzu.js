@@ -9,7 +9,7 @@ var Ponzu = function () {
   });
   this.turn = 0;
   this.gold = 0;
-  this.log = "Welcome to Ponzu."
+  this.log = "Welcome to Ponzu 7DRL 2015 Ver."
 
   this.playerNum = 0;
   this.enemyNum = 0;
@@ -60,6 +60,12 @@ Ponzu.prototype.getMap = function () {
         tmp_map[y + 1][x + 42] = window_map[y][x];
       }
     }
+  } else if (this.windowType[0] == 'center') {
+    for (var y = 0; y < 13; ++y) {
+      for (var x = 0; x < 36; ++x) {
+        tmp_map[y + 1][x + 22] = window_map[y][x];
+      }
+    }
   } else {
     throw new Error('Invalid windowType' + this.windowType);
   }
@@ -70,29 +76,82 @@ Ponzu.prototype.getWindowMap = function () { // 36 x 13
   var window_type = this.windowType;
   if (!window_type) {
     return false;
+
   } else if (window_type[1] == 'character') {
-    var character = window_type[2];
-    var line = '                                    \n';
-    var list = '';
-    if (window_type[3] == 'todo') {
-      for (var i = 0; i < 8; ++i) {
-        var action = character.actions[ (character.state + i) % character.actions.length ];
-        list += (action ? '   ' + action[0] + '(' + action[1] + ', ' + action[2] + ')' : '') + line;
-      }
-    } else {
-      for (var i = 0; i < 8; ++i) {
-        var item = character.items[i];
-        list += (item ? '   ' + item[0] : '') + line;
-      }
-    }
-    var window_str = line +
-                     ' ' + this.map[character.y][character.x] + '                Name: ' + character.name + line +
-                     ' Group: ' + character.group + '         Location: (' + character.x + ', ' + character.y + ')' + line +
-                     ' ' + window_type[3].replace(/^\w/, function(c) { return c.toUpperCase(); }) + ':' + line + list + line;
-    return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+    return this.getCharacterWindowMap();
+
+  } else if (window_type[1] == 'build') {
+    return this.getBuildWindowMap();
+
+  } else if (window_type[1] == 'research') {
+    return this.getResearchWindowMap();
+
   } else {
     throw new Error('Invalid windowType' + window_type);
   }
+};
+
+Ponzu.prototype.getCharacterWindowMap = function () {
+  var window_type = this.windowType;
+  var character = window_type[2];
+  var line = '                                    \n';
+  var list = '';
+  if (window_type[3] == 'todo') {
+    for (var i = 0; i < 8; ++i) {
+      var action = character.actions[ (character.state + i) % character.actions.length ];
+      list += (action ? '   ' + action[0] + '(' + action[1] + ', ' + action[2] + ')' : '') + line;
+    }
+  } else {
+    for (var i = 0; i < 8; ++i) {
+      var item = character.items[i];
+      list += (item ? '   ' + item[0] : '') + line;
+    }
+  }
+  var window_str = line +
+    ' ' + this.map[character.y][character.x] + '                Location: (' + character.x + ', ' + character.y + ')' + line +
+    ' Group: ' + character.group + '         Name: ' + character.name + line +
+    ' ' + window_type[3].replace(/^\w/, function(c) { return c.toUpperCase(); }) + ':' + line + list + line;
+  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+};
+
+Ponzu.prototype.getBuildWindowMap = function () {
+  var line = '                                    \n';
+  var window_str = line + " Build" + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line;
+  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+};
+
+Ponzu.prototype.getResearchWindowMap = function () {
+  var line = '                                    \n';
+  var window_str = line + " Research" + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line;
+  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+};
+
+Ponzu.prototype.point = function (x, y) {
+  var mx = parseInt(x / this.fontX), my = parseInt(y / this.fontY);
+  if (mx < 0 || 80 <= mx || my < 0 || 20 <= my) {
+    return false; // no update
+
+  } else if (my == 0) { // log line
+    return false; // no update
+
+  } else if (1 <= my && my <= 16) { 
+    this.pointMap(mx, my - 1);
+
+  } else if (16 < my) { // UI button
+    if (1 <= mx && mx <= 18) {
+      //this.build();
+
+    } else if (21 <= mx && mx <= 38) {
+      this.windowType = [ 'center', 'build', 3 ];
+
+    } else if (41 <= mx && mx <= 58) {
+      this.windowType = [ 'center', 'research', 3 ];
+
+    } else if (61 <= mx && mx <= 78) {
+      this.next();
+    }
+  }
+  return true; // redraw
 };
 
 Ponzu.prototype.pointMap = function (point_x, point_y) {
@@ -107,8 +166,10 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
     } else {
       this.windowType = null;
     }
+
   } else if (character && character.x < 40) {
     this.windowType = [ 'right', 'character', character, 'todo' ];
+
   } else if (character) {
     this.windowType = [ 'left', 'character', character, 'todo' ];
   }
@@ -129,6 +190,10 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y) {
     }
   });
   return nearest;
+};
+
+Ponzu.prototype.openBuildWindow = function (type, is_player) {
+
 };
 
 Ponzu.prototype.build = function (type, is_player) {

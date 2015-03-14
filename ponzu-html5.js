@@ -1,4 +1,8 @@
-Ponzu.prototype.addCanvas = function (element) {
+
+Ponzu.prototype.resizeCanvas = function () {
+  if (this.maxWidth && this.maxWidth == window.innerWidth) {
+    return; // nothing to do
+  }
   var max_width = window.innerWidth;
   if (max_width < 400) {
     this.fontX = 4; this.fontY = 8;
@@ -14,38 +18,64 @@ Ponzu.prototype.addCanvas = function (element) {
     this.fontX = 10; this.fontY = 20;
   } else if (960 <= max_width - 10 && max_width - 10  < 1200) {
     this.fontX = 12; this.fontY = 24;
-  } else if (1200 <= max_width) {
+  } else if (1200 <= max_width - 10 && max_width - 10  < 1600) {
     this.fontX = 15; this.fontY = 30;
+  } else if (1600 <= max_width - 10) {
+    this.fontX = 20; this.fontY = 40;
   }
-  this.canvasElement = document.createElement('canvas');
   this.canvasElement.setAttribute('width',  this.fontX * 80);
   this.canvasElement.setAttribute('height', this.fontY * 20);
-  element.appendChild(this.canvasElement);
-  element.style.width  = (this.fontX * 80) + 'px';
-  element.style.height = (this.fontY * 20) + 'px';
+  this.canvasElement.parentElement.style.width  = (this.fontX * 80) + 'px';
+  this.canvasElement.parentElement.style.height = (this.fontY * 20) + 'px';
   this.canvasElement.style.width  = (this.fontX * 80) + 'px';
   this.canvasElement.style.height = (this.fontY * 20) + 'px';
   this.canvasContext = this.canvasElement.getContext("2d");
   this.canvasContext.font = (this.fontY - 2) + "px Monospace"; // for adjustment
   this.canvasContext.textBaseline = "ideographic";
+  this.canvasContext.fillStyle = 'white';
+
+  // initial drawing
+  this.drawLog();
+  this.drawUI();
+  this.drawMap(true);
+  this.drawStatus();
+
+  this.maxWidth = max_width;
+};
+
+Ponzu.prototype.addCanvas = function (element) {
+  this.canvasElement = document.createElement('canvas');
+  element.appendChild(this.canvasElement);
+  this.resizeCanvas();
 
   var ponzu = this;
   this.canvasElement.addEventListener('touchstart', function (e) {
     e.preventDefault();
     var rect = e.target.getBoundingClientRect();
-    ponzu.point(e.changedTouches[0].clientX - rect.left, e.changedTouches[0].clientY - rect.top);
+    if (ponzu.point(e.changedTouches[0].clientX - rect.left, e.changedTouches[0].clientY - rect.top)) {
+      ponzu.drawLog();
+      ponzu.drawStatus();
+      ponzu.drawMap();
+    }
   });
   this.canvasElement.addEventListener('mousedown', function (e) {
     e.preventDefault();
     var rect = e.target.getBoundingClientRect();
-    ponzu.point(e.clientX - rect.left, e.clientY - rect.top);
+    if (ponzu.point(e.clientX - rect.left, e.clientY - rect.top)) {
+      ponzu.drawLog();
+      ponzu.drawStatus();
+      ponzu.drawMap();
+    }
   });
 
-  // initial drawing
-  this.drawLog();
-  this.drawUI();
-  this.drawMap();
-  this.drawStatus();
+  window.addEventListener('resize', function() {
+    if (ponzu.resizeTimer) {
+      clearTimeout(ponzu.resizeTimer);
+    }
+    ponzu.resizeTimer = setTimeout(function () {
+      ponzu.resizeCanvas();
+    }, 300);
+  });
 };
 
 Ponzu.prototype.drawUI = function () {
@@ -55,7 +85,6 @@ Ponzu.prototype.drawUI = function () {
   for (var y = 0; y < 3; ++y) {
     for (var x = 0; x < 80; ++x) {
       var str = ui_map[y][x];
-      context.fillStyle = 'black';
       context.fillText(str, font_x * x, font_y * (y + 18)); // bottom 3 lines
     }
   }
@@ -65,7 +94,6 @@ Ponzu.prototype.drawLog = function () {
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
   context.clearRect(0, font_y * 0, font_x * 80, font_y);
-  context.fillStyle = 'black';
   context.fillText(this.log, 0, font_y * 1); // 1st line
 };
 
@@ -73,14 +101,13 @@ Ponzu.prototype.drawStatus = function () {
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
   context.clearRect(0, font_y * 16, font_x * 80, font_y);
-  context.fillStyle = 'black';
   context.fillText('Turn:' + this.turn + '  $:' + this.gold + '  @:' + this.playerNum, 0, font_y * 17); // 17th line
 };
 
-Ponzu.prototype.drawMap = function () {
+Ponzu.prototype.drawMap = function (initial) {
   var context = this.canvasContext;
   var map = this.getMap();
-  var old_map = this.oldMap;
+  var old_map = initial ? null : this.oldMap;
   var font_x = this.fontX, font_y = this.fontY;
 
   for (var y = 0; y < 15; ++y) {
@@ -90,51 +117,9 @@ Ponzu.prototype.drawMap = function () {
         continue;
       }
       context.clearRect(font_x * x, font_y * (y + 1), font_x, font_y);
-      if (str == '+') {
-        context.fillStyle = 'red';
-      } else {
-        context.fillStyle = 'black';
-      }
       context.fillText(str, font_x * x, font_y * (y + 2)); // + 1 is log line
     }
   }
   this.oldMap = map.map(function (row) { return row.concat(); });
 };
 
-Ponzu.prototype.point = function (x, y) {
-  var mx = parseInt(x / this.fontX), my = parseInt(y / this.fontY);
-  if (mx < 0 || 80 <= mx || my < 0 || 20 <= my) {
-    // nothing
-  } else if (my == 0) { // log line
-    // nothing
-  } else if (1 <= my && my <= 16) { 
-    this.pointMap(mx, my - 1);
-    this.drawMap();
-
-  } else if (16 < my) { // UI button
-    if (1 <= mx && mx <= 18) {
-      //this.build();
-      this.drawLog();
-      this.drawStatus();
-      this.drawMap();
-
-    } else if (21 <= mx && mx <= 38) {
-      this.build();
-      this.drawLog();
-      this.drawStatus();
-      this.drawMap();
-
-    } else if (41 <= mx && mx <= 58) {
-      //this.build();
-      this.drawLog();
-      this.drawStatus();
-      this.drawMap();
-
-    } else if (61 <= mx && mx <= 78) {
-      this.next();
-      this.drawLog();
-      this.drawStatus();
-      this.drawMap();
-    }
-  }
-};
