@@ -35,10 +35,10 @@ Ponzu.prototype.resizeCanvas = function () {
   this.canvasContext.fillStyle = 'white';
 
   // initial drawing
-  this.drawLog();
-  this.drawUI();
+  this.drawLog(true);
+  this.drawUI(true);
   this.drawMap(true);
-  this.drawStatus();
+  this.drawStatus(true);
 
   this.maxWidth = max_width;
 };
@@ -54,6 +54,7 @@ Ponzu.prototype.addCanvas = function (element) {
     var rect = e.target.getBoundingClientRect();
     if (ponzu.point(e.changedTouches[0].clientX - rect.left, e.changedTouches[0].clientY - rect.top)) {
       ponzu.drawLog();
+      ponzu.drawUI();
       ponzu.drawStatus();
       ponzu.drawMap();
     }
@@ -63,6 +64,7 @@ Ponzu.prototype.addCanvas = function (element) {
     var rect = e.target.getBoundingClientRect();
     if (ponzu.point(e.clientX - rect.left, e.clientY - rect.top)) {
       ponzu.drawLog();
+      ponzu.drawUI();
       ponzu.drawStatus();
       ponzu.drawMap();
     }
@@ -78,23 +80,16 @@ Ponzu.prototype.addCanvas = function (element) {
   });
 };
 
-Ponzu.prototype.drawUI = function () {
-  var context = this.canvasContext;
-  var font_x = this.fontX, font_y = this.fontY;
-  var ui_map = Ponzu.UIMap;
-  for (var y = 0; y < 3; ++y) {
-    for (var x = 0; x < 80; ++x) {
-      var str = ui_map[y][x];
-      context.fillText(str, font_x * x, font_y * (y + 18)); // bottom 3 lines
-    }
-  }
-};
 
-Ponzu.prototype.drawLog = function () {
+Ponzu.prototype.drawLog = function (initial) {
+  if (!initial && this.oldLog == this.log) {
+    return;
+  }
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
   context.clearRect(0, font_y * 0, font_x * 80, font_y);
   context.fillText(this.log, 0, font_y * 1); // 1st line
+  this.oldLog = this.log;
 };
 
 Ponzu.prototype.drawStatus = function () {
@@ -123,3 +118,20 @@ Ponzu.prototype.drawMap = function (initial) {
   this.oldMap = map.map(function (row) { return row.concat(); });
 };
 
+Ponzu.prototype.drawUI = function (initial) {
+  var context = this.canvasContext;
+  var font_x = this.fontX, font_y = this.fontY;
+  var ui = this.getUI();
+  var old_ui = initial ? null : this.oldUI;
+  for (var y = 0; y < 3; ++y) {
+    for (var x = 0; x < 80; ++x) {
+      var str = ui[y][x];
+      if (old_ui && str == old_ui[y][x]) {
+        continue;
+      }
+      context.clearRect(font_x * x, font_y * (y + 17), font_x, font_y);
+      context.fillText(str, font_x * x, font_y * (y + 18)); // bottom 3 lines
+    }
+  }
+  this.oldUI = ui.map(function (row) { return row.concat(); });
+};
