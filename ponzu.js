@@ -1,7 +1,7 @@
 var PF = require("pathfinding");
+var Chance = require("chance");
 
 var Ponzu = function () {
-  this.windowPosition = null;
   this.windowType = null;
   this.map = this.newMap();
   this.matrix = this.map.map(function (row) {
@@ -18,12 +18,13 @@ var Ponzu = function () {
   this.finder = new PF.AStarFinder({
     diagonalMovement: PF.DiagonalMovement.Always
   });
+  this.chance = new Chance();
 };
 
 Ponzu.UIMap = [
-  [" ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "],
-  [" ","|"," "," "," ","R","e","c","o","r","d"," "," "," ","|"," "," ","|"," "," "," ","B","u","i","l","d"," "," "," "," ","|"," "," ","|"," "," "," ","T","r","a","d","e"," "," "," "," ","|"," "," ","|"," "," ","R","e","s","e","a","r","c","h"," "," ","|"," "," ","|"," ","N","e","x","t"," ","T","u","r","n"," "," ","|"," "],
-  [" ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "," ","-","-","-","-","-","-","-","-","-","-","-","-","-","-"," "]
+    [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
+    [" ","|"," "," "," "," "," ","O","r","d","e","r"," "," "," "," "," "," ","|"," "," ","|"," "," "," "," "," ","B","u","i","l","d"," "," "," "," "," "," ","|"," "," ","|"," "," "," "," ","R","e","s","e","a","r","c","h"," "," "," "," ","|"," "," ","|"," "," "," ","N","e","x","t"," ","T","u","r","n"," "," "," "," ","|"," "],
+    [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "]
 ];
 
 Ponzu.prototype.newMap = function (empty) {
@@ -41,26 +42,26 @@ Ponzu.prototype.newMap = function (empty) {
 };
 
 Ponzu.prototype.getMap = function () {
-  if (!this.windowPosition) {
+  if (!this.windowType) {
     return this.map;
   }
   var window_map = this.getWindowMap();
   var tmp_map = this.map.map(function (row) { return row.concat(); });
 
-  if (this.windowPosition == 'left') {
+  if (this.windowType[0] == 'left') {
     for (var y = 0; y < 13; ++y) {
       for (var x = 0; x < 36; ++x) {
         tmp_map[y + 1][x + 2] = window_map[y][x];
       }
     }
-  } else if (this.windowPosition == 'right') {
+  } else if (this.windowType[0] == 'right') {
     for (var y = 0; y < 13; ++y) {
       for (var x = 0; x < 36; ++x) {
         tmp_map[y + 1][x + 42] = window_map[y][x];
       }
     }
   } else {
-    throw new Error('Invalid windowPosition' + this.windowPosition);
+    throw new Error('Invalid windowType' + this.windowType);
   }
   return tmp_map;
 };
@@ -69,22 +70,25 @@ Ponzu.prototype.getWindowMap = function () { // 36 x 13
   var window_type = this.windowType;
   if (!window_type) {
     return false;
-
-  } else if (window_type[0] == 'character') {
-    var character = window_type[1];
-    var window_str = '                                    \n' +
-                     ' ' + this.map[character.y][character.x] + '                                   \n' +
-                     '                                    \n' +
-                     ' (' + character.x + ', ' + character.y + ')                                \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    \n' +
-                     '                                    ';
+  } else if (window_type[1] == 'character') {
+    var character = window_type[2];
+    var line = '                                    \n';
+    var list = '';
+    if (window_type[3] == 'todo') {
+      for (var i = 0; i < 8; ++i) {
+        var action = character.actions[ (character.state + i) % character.actions.length ];
+        list += (action ? '   ' + action[0] + '(' + action[1] + ', ' + action[2] + ')' : '') + line;
+      }
+    } else {
+      for (var i = 0; i < 8; ++i) {
+        var item = character.items[i];
+        list += (item ? '   ' + item[0] : '') + line;
+      }
+    }
+    var window_str = line +
+                     ' ' + this.map[character.y][character.x] + '                Name: ' + character.name + line +
+                     ' Group: ' + character.group + '         Location: (' + character.x + ', ' + character.y + ')' + line +
+                     ' ' + window_type[3].replace(/^\w/, function(c) { return c.toUpperCase(); }) + ':' + line + list + line;
     return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
   } else {
     throw new Error('Invalid windowType' + window_type);
@@ -93,14 +97,20 @@ Ponzu.prototype.getWindowMap = function () { // 36 x 13
 
 Ponzu.prototype.pointMap = function (point_x, point_y) {
   var character = this.getNearCharacter(point_x, point_y);
-  if (this.windowPosition) {
-    this.windowPosition = null;
+  var window_type = this.windowType;
+  if (window_type) {
+    if (window_type[0] == 'left' && 2 <=  point_x && point_x <= 37 && 1 <= point_y && point_y <= 13 ||
+        window_type[0] == 'right' && 42 <=  point_x && point_x <= 77 && 1 <= point_y && point_y <= 13) {
+      if (window_type[1] == 'character') {
+        window_type[3] = window_type[3] == 'todo' ? 'inventory' : 'todo';
+      }
+    } else {
+      this.windowType = null;
+    }
   } else if (character && character.x < 40) {
-    this.windowPosition = 'right';
-    this.windowType = [ 'character', character ];
+    this.windowType = [ 'right', 'character', character, 'todo' ];
   } else if (character) {
-    this.windowPosition = 'left';
-    this.windowType = [ 'character', character ];
+    this.windowType = [ 'left', 'character', character, 'todo' ];
   }
 };
 
@@ -127,7 +137,10 @@ Ponzu.prototype.build = function (type, is_player) {
     isPlayer: is_player,
     created: this.turn,
     dead: false,
+    name: this.chance.first(),
+    group: 1,
     actions: [ ['move', 2, 2 ], [ 'move', 70, 13 ] ],
+    items: [],
     state: 0,
     x: 40,
     y: 7

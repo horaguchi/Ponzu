@@ -1,4 +1,3 @@
-
 Ponzu.prototype.addCanvas = function (element) {
   var max_width = window.innerWidth;
   if (max_width < 400) {
@@ -102,29 +101,40 @@ Ponzu.prototype.drawMap = function () {
   this.oldMap = map.map(function (row) { return row.concat(); });
 };
 
-
-
 Ponzu.prototype.point = function (x, y) {
   var mx = parseInt(x / this.fontX), my = parseInt(y / this.fontY);
   if (mx < 0 || 80 <= mx || my < 0 || 20 <= my) {
-    return
-  }
-  if (my == 0) {
+    // nothing
+  } else if (my == 0) { // log line
     // nothing
   } else if (1 <= my && my <= 16) { 
     this.pointMap(mx, my - 1);
+    this.drawMap();
 
-  } else if (16 < my) {
-    if (17 <= mx && mx <= 30) {
+  } else if (16 < my) { // UI button
+    if (1 <= mx && mx <= 18) {
+      //this.build();
+      this.drawLog();
+      this.drawStatus();
+      this.drawMap();
+
+    } else if (21 <= mx && mx <= 38) {
       this.build();
       this.drawLog();
       this.drawStatus();
+      this.drawMap();
 
-    } else if (65 <= mx && mx <= 78) {
+    } else if (41 <= mx && mx <= 58) {
+      //this.build();
+      this.drawLog();
+      this.drawStatus();
+      this.drawMap();
+
+    } else if (61 <= mx && mx <= 78) {
       this.next();
       this.drawLog();
       this.drawStatus();
+      this.drawMap();
     }
   }
-  this.drawMap();
 };

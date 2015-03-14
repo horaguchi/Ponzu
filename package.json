@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "pathfinding": "~0.4.16",
+    "chance": "~0.7.3",
     "blessed": "~0.0.38"
   },
   "devDependencies": {
