@@ -32,13 +32,32 @@ Ponzu.prototype.newMap = function (empty) {
   for (var y = 0; y < 15; ++y) {
     var row = [];
     for (var x = 0; x < 80; ++x) {
-      row.push(empty ? '' : '.' );
+      row.push(empty ? '' : ' ' );
     }
     map.push(row);
   }
-  map[2][2] = '<';
-  map[13][70] = '>';
+
+  var base_x = parseInt(Math.random() * 80), base_y = parseInt(Math.random() * 15);
+  map[base_y][base_x] = '<';
+  this.makeVisible(base_x, base_y, map);
+
   return map;
+};
+
+Ponzu.prototype.makeVisible = function (point_x, point_y, map) {
+  var map = map || this.map;
+  var block = 3;
+  var x1 = point_x - block, x2 = point_x + block, y1 = point_y - block, y2 = point_y + block;
+  x1 = x1 < 0 ? 0 : x1;
+  y1 = y1 < 0 ? 0 : y1;
+  x2 = 79 < x2 ? 79 : x2;
+  y2 = 14 < y2 ? 14 : y2;
+
+  for (var y = y1; y <= y2; ++y) {
+    for (var x = x1; x <= x2; ++x) {
+      map[y][x] = map[y][x] == ' ' ? '.' : map[y][x];
+    }
+  }
 };
 
 Ponzu.prototype.getMap = function () {
@@ -114,7 +133,24 @@ Ponzu.prototype.getCharacterWindowMap = function () {
   return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
 };
 
+Ponzu.FIRST_BUILD_WINDOW = [
+  [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" ","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","L","o","c","a","t","i","o","n",":"," ","(","?","?",",","?","?",")"," "],
+  [" ","T","y","p","e",":"," ","?","?","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" ","T","o","d","o",":"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" "," "," ","?","?","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" "," "," ","?","?","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" "," "," ","?","?","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" "," "," ","?","?","?"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
+  [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
+  [" ","|"," "," "," "," "," "," "," ","B","u","i","l","d"," ","a"," ","u","n","i","t"," ","(","$","5",")"," "," "," "," "," "," "," "," ","|"," "],
+  [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
+  [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "]
+];
+
 Ponzu.prototype.getBuildWindowMap = function () {
+  return Ponzu.FIRST_BUILD_WINDOW;
   var line = '                                    \n';
   var window_str = line + " Build" + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line + line;
   return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
@@ -142,10 +178,10 @@ Ponzu.prototype.point = function (x, y) {
       //this.build();
 
     } else if (21 <= mx && mx <= 38) {
-      this.windowType = [ 'center', 'build', 3 ];
+      this.windowType = [ 'center', 'build', null, 3 ];
 
     } else if (41 <= mx && mx <= 58) {
-      this.windowType = [ 'center', 'research', 3 ];
+      this.windowType = [ 'center', 'research', null, 3 ];
 
     } else if (61 <= mx && mx <= 78) {
       this.next();
@@ -158,10 +194,16 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
   var character = this.getNearCharacter(point_x, point_y);
   var window_type = this.windowType;
   if (window_type) {
-    if (window_type[0] == 'left' && 2 <=  point_x && point_x <= 37 && 1 <= point_y && point_y <= 13 ||
-        window_type[0] == 'right' && 42 <=  point_x && point_x <= 77 && 1 <= point_y && point_y <= 13) {
+    if (window_type[0] == 'left'   &&  2 <= point_x && point_x <= 37 && 1 <= point_y && point_y <= 13 ||
+        window_type[0] == 'center' && 22 <= point_x && point_x <= 57 && 1 <= point_y && point_y <= 13 ||
+        window_type[0] == 'right'  && 42 <= point_x && point_x <= 77 && 1 <= point_y && point_y <= 13) {
+      var window_x = point_x - (window_type[0] == 'left' ? 2 : window_type[0] == 'center' ? 22 : 42), window_y = point_y - 1;
       if (window_type[1] == 'character') {
         window_type[3] = window_type[3] == 'todo' ? 'inventory' : 'todo';
+      } else if (window_type[1] == 'build') {
+        if (1 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
+          this.log = 'Button ' + window_x + ',' + window_y;
+        }
       }
     } else {
       this.windowType = null;
@@ -196,10 +238,18 @@ Ponzu.prototype.openBuildWindow = function (type, is_player) {
 
 };
 
-Ponzu.prototype.build = function (type, is_player) {
+Ponzu.BUILD_LIST = [
+  ['@', 'a worker'],
+  ['#', 'a soybean field'],
+  ['#', 'a sudachi field'],
+  ['#', 'a rice paddy field'],
+  ['(', 'a juicer'],
+  ['{', 'a brewery']
+];
+Ponzu.prototype.build = function () {
+  
   var character = {
     type: type,
-    isPlayer: is_player,
     created: this.turn,
     dead: false,
     name: this.chance.first(),
@@ -231,7 +281,6 @@ Ponzu.prototype.next = function () {
   }, this);
 
   // next turn
-  //delete this.queue[this.turn];
   ++this.turn;
 
   // 1. check game over
@@ -243,7 +292,10 @@ Ponzu.prototype._action = function (character) {
   var map = this.map;
   var matrix = this.matrix;
 
-  if (action[0] == 'move') {
+  if (!action) {
+    return;
+
+  } else if (action[0] == 'move') {
     var from_x = character.x, from_y = character.y;
     var to_x = action[1], to_y = action[2];
     var next_x, next_y;
