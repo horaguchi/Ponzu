@@ -585,7 +585,7 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker, not_m
         return true;
       }
     }
-    var d = Math.abs(point_x - value.x) + Math.abs(point_y - value.y);
+    var d = Math.pow(Math.abs(point_x - value.x), 2) + Math.pow(Math.abs(point_y - value.y), 2);
     if (d < min) {
       nearest = value;
       min = d;
@@ -609,12 +609,11 @@ Ponzu.prototype.addCommand = function (character) {
       return actions.push(['sell', character.x, character.y]);
     } else if (character.symbol == '#') {
       return actions.push(['pickup', character.x, character.y]);
-    } else if (character.symbol != '(' && character.symbol != '{') {
+    } else if (character.symbol != '(' && character.symbol != '{' && character.symbol != '[') {
       return; // no additional action
     }
 
     // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
-    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
     var target = actions.length;
     for (var i = actions.length - 1; 0 < i; --i) {
       var action = actions[i];
@@ -636,12 +635,11 @@ Ponzu.prototype.addCommand = function (character) {
     var last = actions[actions.length - 1];
     if (last[1] != character.x || last[2] != character.y) {
       return;
-    } else if (character.symbol != '(' && character.symbol != '{') {
+    } else if (character.symbol != '(' && character.symbol != '{' && character.symbol != '[') {
       return;
     }
 
     // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
-    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
     var target = actions.length;
     for (var i = actions.length - 1; 0 < i; --i) {
       var action = actions[i];

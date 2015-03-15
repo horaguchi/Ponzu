@@ -42,10 +42,10 @@ var Ponzu = function () {
     ['g', 'a goblin', [ ['steal'] ]],
     ['D', 'a dragon', [ ['slay'], ['wait'] ]],
     ['G', 'a gnome', [ ['move'] ]],
-    ['G', 'a gnome', [ ['move'] ]],
-    ['G', 'a gnome', [ ['move'] ]],
     ['^', 'a stone', [ ['stop'] ]],
-    ['^', 'a stone', [ ['stop'] ]],
+    ['#', 'a soybean field', [ ['produce', 'a bag of soybeans'], ['wait'], ['wait'] ]],
+    ['#', 'a sudachi field', [ ['produce', 'a sudachi'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
+    ['#', 'a rice paddy field', [ ['produce', 'a bag of sticky rice'], ['wait'], ['wait'], ['wait'] ]],
     ['_', 'an altar', [ ['wait'], ['wait'], ['wait'], ['wait'], ['wait'], ['bless'], ['stop'] ]]
   ];
 
@@ -586,7 +586,7 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker, not_m
         return true;
       }
     }
-    var d = Math.abs(point_x - value.x) + Math.abs(point_y - value.y);
+    var d = Math.pow(Math.abs(point_x - value.x), 2) + Math.pow(Math.abs(point_y - value.y), 2);
     if (d < min) {
       nearest = value;
       min = d;
@@ -610,12 +610,11 @@ Ponzu.prototype.addCommand = function (character) {
       return actions.push(['sell', character.x, character.y]);
     } else if (character.symbol == '#') {
       return actions.push(['pickup', character.x, character.y]);
-    } else if (character.symbol != '(' && character.symbol != '{') {
+    } else if (character.symbol != '(' && character.symbol != '{' && character.symbol != '[') {
       return; // no additional action
     }
 
     // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
-    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
     var target = actions.length;
     for (var i = actions.length - 1; 0 < i; --i) {
       var action = actions[i];
@@ -637,12 +636,11 @@ Ponzu.prototype.addCommand = function (character) {
     var last = actions[actions.length - 1];
     if (last[1] != character.x || last[2] != character.y) {
       return;
-    } else if (character.symbol != '(' && character.symbol != '{') {
+    } else if (character.symbol != '(' && character.symbol != '{' && character.symbol != '[') {
       return;
     }
 
     // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
-    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
     var target = actions.length;
     for (var i = actions.length - 1; 0 < i; --i) {
       var action = actions[i];
