@@ -16,37 +16,46 @@ var Ponzu = function () {
   this.log.push("Welcome to Ponzu 7DRL 2015 Ver.");
   this.unitNum = 0;
   this.characters = [];
-  this.orderMax = 4;
+  this.commandMax = 4;
   this.inventoryMax = 3;
   this.buildTypeList = [
-    ['@', 'a worker', []], // Group 0
-    ['@', 'a worker', []], // Group 1
-    ['@', 'a worker', []], // Group 2
-    ['@', 'a worker', []], // Group 3
-    ['@', 'a worker', []], // Group 4
-    ['@', 'a worker', []], // Group 5
-    ['@', 'a worker', []], // Group 6
-    ['@', 'a worker', []], // Group 7
-    ['@', 'a worker', []], // Group 8
-    ['@', 'a worker', []], // Group 9
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
+    ['@', 'a worker', []],
     ['<', 'a base', []], // base, not chosen
-    ['#', 'a soybean field', [ ['produce', '%', 'a bag of soybeans'], ['wait'], ['wait'] ]],
-    ['#', 'a sudachi field', [ ['produce', '%', 'a sudachi'], ['wait'], ['wait'] ]],
-    ['#', 'a rice paddy field', [ ['produce', '%', 'a bag of sticky rice'], ['wait'], ['wait'] ]],
+    ['#', 'a soybean field', [ ['produce', 'a bag of soybeans'], ['wait'], ['wait'] ]],
+    ['#', 'a sudachi field', [ ['produce', 'a sudachi'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
+    ['#', 'a rice paddy field', [ ['produce', 'a bag of sticky rice'], ['wait'], ['wait'], ['wait'] ]],
     ['[', 'a box', [ ]],
     ['(', 'a juicer', [ ['juice'], ['wait'], ['wait'], ['wait'] ]],
-    ['{', 'a brewery', [ ['brew'], ['wait'], ['wait'], ['wait'], ['wait'] ]]
+    ['{', 'a brewery', [ ['brew'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
+    ['g', 'a goblin', [ [ 'steal' ] ]],
+    ['D', 'a dragon', [ [ 'slay' ], [ 'wait' ] ]],
+    ['G', 'a gnome', [ [ 'move' ] ]]
   ];
 
   // initial map
   this.map = this.newMap();
   this.matrix = this.map.map(function (row) {
-    return row.map(function (tile) { return tile == '.' ? false : true });
+    return row.map(function (tile) { return tile == '.' ? false : true; });
   });
   var base_x = parseInt(Math.random() * 80), base_y = parseInt(Math.random() * 15);
   this.build(10, base_x, base_y); // build a base
   this.build(1); // build a worker
   this.build(11); // build a soybean field
+};
+
+Ponzu.ITEM_LIST = {
+  'a bag of soybeans':    ['%', 'bags of soybeans', 2],
+  'a sudachi':            ['%', 'sudachi', 4],
+  'a bag of sticky rice': ['%', 'bags of sticky rice', 3]
 };
 
 /**************************************
@@ -119,12 +128,9 @@ Ponzu.prototype.getMap = function () {
   if (window_type[1] == 'character' || (window_type[1] == 'build' && window_type[2])) {
     tmp_map[window_type[2].y][window_type[2].x] = '{yellow-fg}' + tmp_map[window_type[2].y][window_type[2].x] + '{/yellow-fg}';
 
-  } else if (window_type[0] == 'ui' && window_type[1] == 'order') {
-    this.characters.forEach(function (character) {
-      if (!character.dead && character.type == 'a worker' && character.group == window_type[2]) {
-        tmp_map[character.y][character.x] = '{yellow-fg}' + tmp_map[character.y][character.x] + '{/yellow-fg}';
-      }
-    });
+  } else if (window_type[0] == 'ui' && window_type[1] == 'command') {
+    tmp_map[window_type[2].y][window_type[2].x] = '{yellow-fg}' + tmp_map[window_type[2].y][window_type[2].x] + '{/yellow-fg}';
+
     window_type[3].forEach(function (action) {
       if (tmp_map[action[2]][action[1]].length == 1) {
         tmp_map[action[2]][action[1]] = '{red-fg}' + tmp_map[action[2]][action[1]] + '{/red-fg}';
@@ -148,78 +154,79 @@ Ponzu.prototype.getWindowMap = function () { // 36 x 13
   } else if (window_type[1] == 'log') {
     return this.getLogWindowMap();
 
-  } else if (window_type[1] == 'order') {
-    return this.getOrderWindowMap();
+  } else if (window_type[1] == 'command') {
+    return null; // UI only
 
   } else if (window_type[1] == 'build') {
     return this.getBuildWindowMap();
-
-  } else if (window_type[1] == 'research') {
-    return this.getResearchWindowMap();
 
   } else {
     throw new Error('Invalid windowType' + window_type);
   }
 };
 
+Ponzu.COMMAND_BUTTON = [
+  ["+","-","-","-","-","-","-","-","+"],
+  ["|","C","o","m","m","a","n","d","|"],
+  ["+","-","-","-","-","-","-","-","+"]
+];
+
 Ponzu.prototype.getCharacterWindowMap = function () {
   var window_type = this.windowType;
   var character = window_type[2];
-  var actions = this.buildTypeList[character.group][2];
+  var actions = character.actions || this.buildTypeList[character.group][2];
   var list = '';
   if (window_type[3] == 'todo') {
+    list = ' Todo (' + (actions.length && character.state + 1) + '/' + actions.length + '):\n';
     for (var i = 0; i < 8; ++i) {
       var action = actions[ (character.state + i) % actions.length ];
       list += (action ? '   ' + action[0] + '(' + action.slice(1).join(',') + ')': '') + '\n';
     }
   } else {
+    list = ' Inventory (' + character.items.length + '/' + this.inventoryMax + '):\n';
+    var item_num = {};
+    var item_keys = [];
+    character.items.forEach(function (item) {
+      if (item_num[item]) {
+        ++item_num[item];
+      } else {
+        item_num[item] = 1;
+        item_keys.push(item);
+      }
+    });
     for (var i = 0; i < 8; ++i) {
-      var item = character.items[i];
-      list += (item ? '   ' + item[0] + ' - ' + item[1] : '') + '\n';
+      var item = item_keys[i];
+      list += (item
+        ? '   ' + Ponzu.ITEM_LIST[item][0] + ' - ' +
+          (item_num[item] == 1
+            ? item
+            : item_num[item] + ' ' + Ponzu.ITEM_LIST[item][1])
+        : '') + '\n';
     }
   }
   var window_str = '\n' +
     ' ' + this.map[character.y][character.x] + '                Location: (' + character.x + ', ' + character.y + ')\n' +
-    (this.map[character.y][character.x] == '@'
-      ? ' Group: ' + character.group + '         Name: ' + character.name + '\n'
-      : ' Type: ' + character.type + '\n') +
-    ' ' + window_type[3].replace(/^\w/, function(c) { return c.toUpperCase(); }) + ':\n' + list + '\n';
-  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+    (character.symbol == '@' ? ' Name: ' + character.name : ' Type: ' + character.type) + '\n' +
+    list + '\n';
+  var window_map = window_str.split("\n").map(function (row_str) { return row_str.split(""); });
+
+  if (character.symbol != '@') {
+    return window_map;
+  }
+
+  for (var y = 0; y < 3; ++y) {
+    for (var x = 0; x < 9; ++x) {
+      window_map[y + 9] = window_map[y + 9] || [];
+      window_map[y + 9][x + 26] = Ponzu.COMMAND_BUTTON[y][x];
+    }
+  }
+  return window_map;
 };
 
 Ponzu.prototype.getLogWindowMap = function () {
   var window_str = [ '\n' ].concat(this.log.slice(-11)).concat('\n');
   return window_str.map(function (row_str) { return row_str.split(""); });
 };
-
-Ponzu.FIRST_ORDER_WINDOW_STR = 
-  "                                    \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  " |Group 1 |  |Group 2 |  |Group 3 | \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  " |Group 4 |  |Group 5 |  |Group 6 | \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  " |Group 7 |  |Group 8 |  |Group 9 | \n" +
-  " +--------+  +--------+  +--------+ \n" +
-  "             +--------+             \n" +
-  "             |Group 0 |             \n" +
-  "             +--------+             \n" +
-  "                                    \n";
-
-Ponzu.prototype.getOrderWindowMap = function () {
-  var exists = {};
-  this.characters.forEach(function (character) {
-    if (!character.dead && character.type == 'a worker') {
-      exists[character.group] = true;
-    }
-  });
-  return Ponzu.FIRST_ORDER_WINDOW_STR.replace(/Group (\d)/g, function (str, p1) {
-    return exists[p1] ? str : '       ';
-  }).split("\n").map(function (row_str) { return row_str.split(""); });
-};
-
 
 Ponzu.FIRST_BUILD_WINDOW = [
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
@@ -232,7 +239,7 @@ Ponzu.FIRST_BUILD_WINDOW = [
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
   [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
-  [" ","|"," "," "," "," "," "," "," ","B","u","i","l","d"," ","a"," ","u","n","i","t"," ","(","$","5",")"," "," "," "," "," "," "," "," ","|"," "],
+  [" ","|"," "," "," "," "," "," "," ","B","u","i","l","d"," ","a"," ","u","n","i","t"," ","(","$","1","0",")"," "," "," "," "," "," "," ","|"," "],
   [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "]
 ];
@@ -240,59 +247,54 @@ Ponzu.FIRST_BUILD_WINDOW = [
 Ponzu.prototype.getBuildWindowMap = function () {
   var window_type = this.windowType;
   var character = window_type[2];
-  var list = '';
   if (!character) {
     return Ponzu.FIRST_BUILD_WINDOW;
   }
   var window_str = '\n' +
     ' ' + this.map[character.y][character.x] + '                Location: (' + character.x + ', ' + character.y + ')\n' +
-    (this.map[character.y][character.x] == '@'
-      ? ' Group: ' + character.group + '         Name: ' + character.name + '\n'
-      : ' Type: ' + character.type + '\n') +
+    (character.symbol == '@' ? ' Name: ' + character.name : ' Type: ' + character.type) +
     '\n\n\n\n\n\n\n\n\n\n\n';
   var window_map = window_str.split("\n").map(function (row_str) { return row_str.split(""); });
   window_map[ 9] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
-  window_map[10] = [" ","|"," "," "," "," "," ","R","e","r","o","l","l"," ","t","h","i","s"," ","u","n","i","t"," ","(","$","1",")"," "," "," "," "," "," ","|"," "];
+  window_map[10] = [" ","|"," "," "," "," "," ","R","e","r","o","l","l"," ","t","h","i","s"," ","u","n","i","t"," ","(","$","5",")"," "," "," "," "," "," ","|"," "];
   window_map[11] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
   window_map[12] = [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "];
   return window_map;
-};
-
-Ponzu.prototype.getResearchWindowMap = function () {
-  var window_str = '\n Research\n\n\n\n\n\n\n\n\n\n\n\n\n';
-  return window_str.split("\n").map(function (row_str) { return row_str.split(""); });
 };
 
 /**************************************
  * UI (buttons) methods
  **************************************/
 Ponzu.UI = [
-    [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
-    [" ","|"," "," "," "," "," ","O","r","d","e","r"," "," "," "," "," "," ","|"," "," ","|"," "," "," "," "," ","B","u","i","l","d"," "," "," "," "," "," ","|"," "," ","|"," "," "," "," ","R","e","s","e","a","r","c","h"," "," "," "," ","|"," "," ","|"," "," "," ","N","e","x","t"," ","T","u","r","n"," "," "," "," ","|"," "],
-    [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "]
+  [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
+  [" ","|"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","B","u","i","l","d"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","|"," "," ","|"," "," "," "," "," "," "," "," "," "," "," "," "," "," ","N","e","x","t"," ","T","u","r","n"," "," "," "," "," "," "," "," "," "," "," "," "," ","|"," "],
+  [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "," ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "]
 ];
 
 Ponzu.prototype.getUI = function () {
   var window_type = this.windowType;
-  if (window_type && window_type[0] == 'ui' && window_type[1] == 'order') {
-    return this.getOrderUI();
+  if (window_type && window_type[0] == 'ui' && window_type[1] == 'command') {
+    return this.getCommandUI();
   } else {
     return Ponzu.UI;
   }
 };
+
 Ponzu.ACTION_ABBR = {
   'move': 'mv',
+  'sell': 'sl',
   'pickup': 'pu',
   'drop': 'drp'
 };
-Ponzu.prototype.getOrderUI = function () {
+
+Ponzu.prototype.getCommandUI = function () {
   var window_type = this.windowType;
-  var actions = this.windowType[3];
+  var actions = window_type[3];
   var actions_ui = [ '' ];
   var latest_line = '';
   for (var i = 0; i < actions.length; ++i) {
     var action = actions[i];
-    var word = Ponzu.ACTION_ABBR[actions[i][0]] + '(' + actions[i].slice(1).join(',') + ')';
+    var word = Ponzu.ACTION_ABBR[action[0]] + '(' + action.slice(1).join(',') + ')';
     if ((latest_line + word).length <= 53) {
       actions_ui[actions_ui.length - 1] += word;
       latest_line = actions_ui[actions_ui.length - 1];
@@ -301,7 +303,7 @@ Ponzu.prototype.getOrderUI = function () {
       latest_line = word;
     }
   }
-  word = '(Group ' + this.windowType[2] + ' ' + actions.length + '/' + this.orderMax + ')';
+  word = '(' + actions.length + '/' + this.commandMax + ')';
   if ((latest_line + word).length <= 53) {
     actions_ui[actions_ui.length - 1] += word;
   } else {
@@ -310,7 +312,7 @@ Ponzu.prototype.getOrderUI = function () {
   actions_ui = actions_ui.map(function (line) { return line.split(""); }).slice(-3);
 
   var out = [
-    [" "," "," "," "," ",")"," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","+","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," "],
+    [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","+","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," "],
     [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","|","S","a","v","e","|"," ","|","D","e","l","e","t","e","|"," ","|","C","a","n","c","e","l","|"," "],
     [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","+","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," ","+","-","-","-","-","-","-","+"," "]
   ];
@@ -338,29 +340,25 @@ Ponzu.prototype.point = function (x, y) {
     this.pointMap(mx, my - 1);
 
   } else if (16 < my) { // UI button
-    if (window_type && window_type[0] == 'ui' && window_type[1] == 'order') {
-      if (55 <= mx && mx <= 60) {
-        this.buildTypeList[window_type[2]][2] = this.windowType[3];
+    if (window_type && window_type[0] == 'ui' && window_type[1] == 'command') {
+      if (55 <= mx && mx <= 60) { // Save
+        window_type[2].state = 0;
+        window_type[2].actions = this.windowType[3];
+        this.log.push("You have commanded to " + window_type[2].name + '.');
         this.windowType = null;
 
-      } else if (62 <= mx && mx <= 69) {
+      } else if (62 <= mx && mx <= 69) { // Delete
         this.windowType[3] = [];
 
-      } else if (71 <= mx && mx <= 78) {
+      } else if (71 <= mx && mx <= 78) { // Cancel
         this.windowType = null;
 
       }
     } else {
-      if (1 <= mx && mx <= 18) {
-        this.windowType = [ 'center', 'order' ];
-
-      } else if (21 <= mx && mx <= 38) {
+      if (1 <= mx && mx <= 38) { // Build
         this.windowType = [ 'center', 'build', null ];
 
-      } else if (41 <= mx && mx <= 58) {
-        this.windowType = [ 'center', 'research' ];
-
-      } else if (61 <= mx && mx <= 78) {
+      } else if (41 <= mx && mx <= 78) { // Next Turn
         this.next();
       }
     }
@@ -379,7 +377,12 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
 
       // character window
       if (window_type[1] == 'character') {
-        window_type[3] = window_type[3] == 'todo' ? 'inventory' : 'todo';
+        if (26 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
+          this.windowType = [ 'ui', 'command', window_type[2], (window_type[2].actions || []).concat() ];
+
+        } else {
+          window_type[3] = window_type[3] == 'todo' ? 'inventory' : 'todo';
+        }
 
       // build window
       } else if (window_type[1] == 'build') {
@@ -396,34 +399,10 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
             this.windowType[2] = created_character;
           }
         }
-
-      // order window
-      } else if (window_type[1] == 'order') {
-        if (        1 <= window_x && window_x <= 10 && 1 <= window_y && window_y <= 3) {
-          this.windowType = [ 'ui', 'order', 1, this.buildTypeList[1][2].concat() ];
-        } else if (13 <= window_x && window_x <= 22 && 1 <= window_y && window_y <= 3) {
-          this.windowType = [ 'ui', 'order', 2, this.buildTypeList[2][2].concat() ];
-        } else if (25 <= window_x && window_x <= 34 && 1 <= window_y && window_y <= 3) {
-          this.windowType = [ 'ui', 'order', 3, this.buildTypeList[3][2].concat() ];
-        } else if ( 1 <= window_x && window_x <= 10 && 4 <= window_y && window_y <= 6) {
-          this.windowType = [ 'ui', 'order', 4, this.buildTypeList[4][2].concat() ];
-        } else if (13 <= window_x && window_x <= 22 && 4 <= window_y && window_y <= 6) {
-          this.windowType = [ 'ui', 'order', 5, this.buildTypeList[5][2].concat() ];
-        } else if (25 <= window_x && window_x <= 34 && 4 <= window_y && window_y <= 6) {
-          this.windowType = [ 'ui', 'order', 6, this.buildTypeList[6][2].concat() ];
-        } else if ( 1 <= window_x && window_x <= 10 && 7 <= window_y && window_y <= 9) {
-          this.windowType = [ 'ui', 'order', 7, this.buildTypeList[7][2].concat() ];
-        } else if (13 <= window_x && window_x <= 22 && 7 <= window_y && window_y <= 9) {
-          this.windowType = [ 'ui', 'order', 8, this.buildTypeList[8][2].concat() ];
-        } else if (25 <= window_x && window_x <= 34 && 7 <= window_y && window_y <= 9) {
-          this.windowType = [ 'ui', 'order', 9, this.buildTypeList[9][2].concat() ];
-        } else if (13 <= window_x && window_x <= 22 && 10 <= window_y && window_y <= 12) {
-          this.windowType = [ 'ui', 'order', 0, this.buildTypeList[0][2].concat() ];
-        }
       }
-    // order UI
-    } else if (window_type[0] == 'ui' && window_type[1] == 'order') {
-      this.addOrder(this.getNearCharacter(point_x, point_y, true));
+    // command UI
+    } else if (window_type[0] == 'ui' && window_type[1] == 'command') {
+      this.addCommand(this.getNearCharacter(point_x, point_y, true));
 
     } else {
       this.windowType = null;
@@ -457,11 +436,69 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker) {
   return nearest;
 };
 
-Ponzu.prototype.addOrder = function (character) {
+Ponzu.prototype.addCommand = function (character) {
   var window_type = this.windowType;
-  //if (window_type[3].length < this.orderMax) {
-    window_type[3].push(['move', character.x, character.y]);
-  //}
+  var actions = window_type[3];
+  if (actions.length < this.commandMax) {
+    if (actions.length == 0) {
+      return actions.push(['move', character.x, character.y]);
+    }
+    var last = actions[actions.length - 1];
+    if (last[1] != character.x || last[2] != character.y) {
+      return actions.push(['move', character.x, character.y]);
+    }
+    if (character.symbol == '<') {
+      return actions.push(['sell', character.x, character.y]);
+    } else if (character.symbol == '#') {
+      return actions.push(['pickup', character.x, character.y]);
+    } else if (character.symbol != '(' && character.symbol != '{') {
+      return; // no additional action
+    }
+
+    // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
+    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
+    var target = actions.length;
+    for (var i = actions.length - 1; 0 < i; --i) {
+      var action = actions[i];
+      if (action[0] != 'move' && action[1] == character.x && action[2] == character.y) {
+        target = i;
+      }
+    }
+    var next_action_name = target == actions.length ? 'drop' : actions[target][0] == 'drop' ? 'pickup' : 'drop';
+    for (var i = target; i < actions.length; ++i) {
+      var action = actions[i];
+      action[0] = next_action_name;
+    }
+    if (next_action_name == 'drop') {
+      actions.push(['drop', character.x, character.y]);
+    }
+    return;
+
+  } else {
+    var last = actions[actions.length - 1];
+    if (last[1] != character.x || last[2] != character.y) {
+      return;
+    } else if (character.symbol != '(' && character.symbol != '{') {
+      return;
+    }
+
+    // ( mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... )
+    // { mv -> mv drp -> mv pu -> mv drp drp -> mv pu pu -> mv drp drp drp -> ... }
+    var target = actions.length;
+    for (var i = actions.length - 1; 0 < i; --i) {
+      var action = actions[i];
+      if (action[0] != 'move' && action[1] == character.x && action[2] == character.y) {
+        target = i;
+      }
+    }
+    var next_action_name = target == actions.length ? 'drop' : actions[target][0] == 'drop' ? 'pickup' : 'drop';
+    if (next_action_name == 'pickup') { // change only (no add action)
+      for (var i = target; i < actions.length; ++i) {
+        var action = actions[i];
+        action[0] = next_action_name;
+      }
+    }
+  }
 };
 
 Ponzu.isBuildFree = function (pos_x, pos_y, map) {
@@ -510,6 +547,7 @@ Ponzu.prototype.build = function (force_index, force_x, force_y) {
   var target_type = this.buildTypeList[index];
 
   var character = {
+    symbol: target_type[0],
     type: target_type[1],
     created: this.turn,
     dead: false,
@@ -526,7 +564,7 @@ Ponzu.prototype.build = function (force_index, force_x, force_y) {
   this.makeVisible(pos_x, pos_y, map);
   ++this.unitNum;
   if (typeof force_index != 'number') {
-    this.log.push("You build " + target_type[1] + ".");
+    this.log.push("You built " + target_type[1] + ".");
   }
   return character;
 };
@@ -539,8 +577,8 @@ Ponzu.prototype.build = function (force_index, force_x, force_y) {
 Ponzu.prototype.next = function () {
   // 3. character action
   this.characters = this.characters.filter(function (character) {
-    this._action(character);
     if (!character.dead) {
+      this._action(character);
       return true;
     }
   }, this);
@@ -553,7 +591,7 @@ Ponzu.prototype.next = function () {
 };
 
 Ponzu.prototype._action = function (character) {
-  var actions = this.buildTypeList[character.group][2];
+  var actions = character.actions || this.buildTypeList[character.group][2];
   var action = actions[character.state];
   var map = this.map;
   var matrix = this.matrix;
@@ -566,9 +604,16 @@ Ponzu.prototype._action = function (character) {
     var from_x = character.x, from_y = character.y;
     var to_x = action[1], to_y = action[2];
     var next_x, next_y;
-    var grid = new PF.Grid(80, 15, matrix);
-    grid.setWalkableAt(to_x, to_y, true);
-    var path = this.finder.findPath(from_x, from_y, to_x, to_y, grid);
+    var path;
+    if (typeof to_x == 'number' && typeof to_y == 'number') {
+      var grid = new PF.Grid(80, 15, matrix);
+      grid.setWalkableAt(to_x, to_y, true);
+      path = this.finder.findPath(from_x, from_y, to_x, to_y, grid);
+    } else { // force random walk
+      to_x = from_x; to_y = from_y;
+      path = [];
+    }
+
     if (path.length > 2) { // path found
       next_x = path[1][0];
       next_y = path[1][1];
@@ -587,7 +632,7 @@ Ponzu.prototype._action = function (character) {
     map[character.y][character.x] = '.';
     matrix[character.y][character.x] = false;
     character.x = next_x; character.y = next_y;
-    map[next_y][next_x] = '@';
+    map[next_y][next_x] = character.symbol;
     matrix[next_y][next_x] = true;
 
     // change state
@@ -595,19 +640,70 @@ Ponzu.prototype._action = function (character) {
       ++character.state;
     }
 
+  } else if (action[0] == 'pickup') {
+    var from_x = character.x, from_y = character.y;
+    var to_x = action[1], to_y = action[2];
+    var from_character = this.characters.filter(function (c) { return !c.dead && c.x == to_x && c.y == to_y; })[0];
+    if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1 &&
+      from_character && from_character.items.length > 0 &&
+      character.items.length < this.inventoryMax) {
+      var pickup_item = from_character.items.pop();
+      character.items.push(pickup_item);
+      this.log.push(character.name + ' picked up ' + pickup_item + ' from ' + from_character.type + '.');
+      ++character.state;
+    } else {
+      this.log.push(character.name + ' can not pick up anything.');
+    }
+
+  } else if (action[0] == 'drop') {
+    var from_x = character.x, from_y = character.y;
+    var to_x = action[1], to_y = action[2];
+    var to_character = this.characters.filter(function (c) { return !c.dead && c.x == to_x && c.y == to_y; })[0];
+    if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1 &&
+      character.items.length > 0 &&
+      to_character && to_character.items.length < this.inventoryMax) {
+      var drop_item = character.items.pop();
+      to_character.items.push(drop_item);
+      this.log.push(character.name + ' drop ' + drop_item + ' to ' + to_character.type + '.');
+      ++character.state;
+    } else {
+      this.log.push(character.name + ' can not drop anything.');
+    }
+
+  } else if (action[0] == 'sell') {
+    var from_x = character.x, from_y = character.y;
+    var to_x = action[1], to_y = action[2];
+    if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1 && character.items.length > 0) {
+      var sold_item = character.items.pop();
+      this.gold += Ponzu.ITEM_LIST[sold_item][2];
+      this.log.push(character.name + ' sold ' + sold_item + ' for ' + Ponzu.ITEM_LIST[sold_item][2] + ' golds.');
+      ++character.state;
+    } else {
+      this.log.push(character.name + ' can not sell anything.');
+    }
+
+  } else if (action[0] == 'produce') {
+    if (character.items.length < this.inventoryMax) {
+      character.items.push(action[1]);
+      ++character.state;
+    }
+
+  } else if (action[0] == 'mix') {
+    ++character.state;
+
   } else if (action[0] == 'brew') {
     ++character.state;
 
   } else if (action[0] == 'juice') {
     ++character.state;
 
-  } else if (action[0] == 'produce') {
-    if (character.items.length < this.inventoryMax) {
-      character.items.push(action.slice(1));
-      ++character.state;
-    }
+  } else if (action[0] == 'juice') {
+    ++character.state;
 
-  } else if (action[0] == 'wait') {
+  } else if (action[0] == 'steal') {
+    ++character.state;
+
+  } else if (action[0] == 'slay') {
     ++character.state;
 
   } else {

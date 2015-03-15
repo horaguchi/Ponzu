@@ -48,6 +48,7 @@ Ponzu.prototype.addCanvas = function (element) {
   element.appendChild(this.canvasElement);
   this.resizeCanvas();
 
+  Ponzu.ins = this;
   var ponzu = this;
   this.canvasElement.addEventListener('touchstart', function (e) {
     e.preventDefault();
