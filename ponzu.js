@@ -12,12 +12,13 @@ var Ponzu = function () {
   this.windowType = null;
   this.turn = 0;
   this.gold = 0;
+  this.soldItems = {};
   this.log = [];
-  this.log.push("Welcome to Ponzu 7DRL 2015 Ver.");
   this.unitNum = 0;
   this.characters = [];
   this.commandMax = 4;
-  this.inventoryMax = 3;
+  this.inventoryMax = 4;
+  this.rerollMax = 1;
   this.buildTypeList = [
     ['@', 'a worker', []],
     ['@', 'a worker', []],
@@ -34,11 +35,17 @@ var Ponzu = function () {
     ['#', 'a sudachi field', [ ['produce', 'a sudachi'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
     ['#', 'a rice paddy field', [ ['produce', 'a bag of sticky rice'], ['wait'], ['wait'], ['wait'] ]],
     ['[', 'a box', [ ]],
-    ['(', 'a juicer', [ ['juice'], ['wait'], ['wait'], ['wait'] ]],
+    ['(', 'a juicer', [ ['juice'], ['wait'], ['wait'] ]],
     ['{', 'a brewery', [ ['brew'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
-    ['g', 'a goblin', [ [ 'steal' ] ]],
-    ['D', 'a dragon', [ [ 'slay' ], [ 'wait' ] ]],
-    ['G', 'a gnome', [ [ 'move' ] ]]
+    ['&', 'a mixer', [ ['mix'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
+    ['g', 'a goblin', [ ['steal'] ]],
+    ['D', 'a dragon', [ ['slay'], ['wait'] ]],
+    ['G', 'a gnome', [ ['move'] ]],
+    ['^', 'a stone', [ ['stop'] ]],
+    ['#', 'a soybean field', [ ['produce', 'a bag of soybeans'], ['wait'], ['wait'] ]],
+    ['#', 'a sudachi field', [ ['produce', 'a sudachi'], ['wait'], ['wait'], ['wait'], ['wait'] ]],
+    ['#', 'a rice paddy field', [ ['produce', 'a bag of sticky rice'], ['wait'], ['wait'], ['wait'] ]],
+    ['_', 'an altar', [ ['wait'], ['wait'], ['wait'], ['wait'], ['wait'], ['bless'], ['stop'] ]]
   ];
 
   // initial map
@@ -50,12 +57,145 @@ var Ponzu = function () {
   this.build(10, base_x, base_y); // build a base
   this.build(1); // build a worker
   this.build(11); // build a soybean field
+
+  this.event();
 };
 
+Ponzu.EVENT_LIST = [
+  function () {
+    this.log.push('Welcome to Ponzu 7DRL 2015 Ver.');
+    this.log.push('----');
+    this.log.push('Mission 1:');
+    this.log.push('  Sell 10 bags of soybeans');
+    this.log.push('');
+    this.log.push('Hint:');
+    this.log.push('  You can command to workers.');
+    this.log.push('----');
+    this.log.push('');
+    this.windowType = [ 'center', 'log' ];
+    return true;
+  },
+  function () {
+    if (this.soldItems['a bag of soybeans'] >= 10) {
+      this.build(1); // build a worker
+      this.log.push('----');
+      this.log.push('Bonus: You got one more worker.');
+      this.log.push('');
+      this.log.push('Mission 2:');
+      this.log.push('  Increase the number of units to 5');
+      this.log.push('');
+      this.log.push('Hint:');
+      this.log.push('  You can build a unit by "Build" ');
+      this.log.push('  button. ');
+      this.log.push('----');
+      this.log.push('');
+      this.windowType = [ 'center', 'log' ];
+      return true;
+    } else {
+      return false;
+    }
+  },
+  function () {
+    if (this.unitNum >= 5) {
+      this.build(16); // build a brewery
+      this.log.push('----');
+      this.log.push('Bonus: You got a brewery.');
+      this.log.push('');
+      this.log.push('Mission 3:');
+      this.log.push('  Sell 10 potions of soy sauce');
+      this.log.push('');
+      this.log.push('Hint:');
+      this.log.push('  A brewery creates it from soybeans');
+      this.log.push('  that is it in the inventory.');
+      this.log.push('----');
+      this.log.push('');
+      this.windowType = [ 'center', 'log' ];
+      return true;
+    } else {
+      return false;
+    }
+  },
+  function () {
+    if (this.soldItems['a potion of soy sauce'] >= 10) {
+      this.build(15); // build a juicer
+      this.log.push('----');
+      this.log.push('Bonus: You got a juicer.');
+      this.log.push('');
+      this.log.push('Mission 4:');
+      this.log.push('  Sell 10 potions of sudachi juice');
+      this.log.push('  Sell 10 potions of mirin');
+      this.log.push('----');
+      this.log.push('');
+      this.windowType = [ 'center', 'log' ];
+      return true;
+    } else {
+      return false;
+    }
+  },
+  function () {
+    if (this.soldItems['a potion of sudachi juice'] >= 10 &&
+        this.soldItems['a potion of mirin'] >= 10) {
+      this.gold += 1000;
+      this.log.push('----');
+      this.log.push('Bonus: You got 1000 Golds.');
+      this.log.push('');
+      this.log.push('Mission 5:');
+      this.log.push('  Sell 10 potions of ponzu');
+      this.log.push('');
+      this.log.push('Hint:');
+      this.log.push('  ponzu=7 shoyu:5 sudachi:3 mirin');
+      this.log.push('----');
+      this.log.push('');
+      this.windowType = [ 'center', 'log' ];
+      return true;
+    } else {
+      return false;
+    }
+  },
+  function () {
+    if (this.soldItems['a potion of ponzu'] >= 10) {
+      this.log.push('----');
+      this.log.push('You Win! Turn = ' + this.turn);
+      this.windowType = [ 'center', 'log' ];
+      return true;
+    } else {
+      return false;
+    }
+  }
+];
+
 Ponzu.ITEM_LIST = {
-  'a bag of soybeans':    ['%', 'bags of soybeans', 2],
-  'a sudachi':            ['%', 'sudachi', 4],
-  'a bag of sticky rice': ['%', 'bags of sticky rice', 3]
+  'a bag of soybeans':         ['%', 'bags of soybeans', 2],
+  'a sudachi':                 ['%', 'sudachi', 4],
+  'a bag of sticky rice':      ['%', 'bags of sticky rice', 3],
+  'a potion of soy sauce':     ['!', 'potions of soy sauce', 20],
+  'a potion of sudachi juice': ['!', 'potions of sudachi juice', 16],
+  'a potion of mirin':         ['!', 'potions of mirin', 30],
+  'a potion of ponzu':         ['!', 'potions of ponzu', 500]
+};
+
+Ponzu.ITEM_RECIPE = {
+  'brew': {
+    'a bag of soybeans': 'a potion of soy sauce',
+    'a bag of sticky rice': 'a potion of mirin'
+  },
+  'juice': {
+    'a sudachi': 'a potion of sudachi juice'
+  },
+  'mix': {
+    'a potion of ponzu': {
+      'a potion of soy sauce': 7,
+      'a potion of sudachi juice': 5,
+      'a potion of mirin': 3
+    }
+  }
+};
+
+Ponzu.prototype.event = function () {
+  var event = (Ponzu.EVENT_LIST[0] || function () { }).call(this);
+  if (event) {
+    Ponzu.EVENT_LIST.shift();
+  }
 };
 
 /**************************************
@@ -239,7 +379,7 @@ Ponzu.FIRST_BUILD_WINDOW = [
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "],
   [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
-  [" ","|"," "," "," "," "," "," "," ","B","u","i","l","d"," ","a"," ","u","n","i","t"," ","(","$","1","0",")"," "," "," "," "," "," "," ","|"," "],
+  [" ","|"," "," "," "," "," "," "," ","B","u","i","l","d"," ","a"," ","u","n","i","t"," ","(","$","5","0",")"," "," "," "," "," "," "," ","|"," "],
   [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "],
   [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "]
 ];
@@ -256,9 +396,9 @@ Ponzu.prototype.getBuildWindowMap = function () {
     '\n\n\n\n\n\n\n\n\n\n\n';
   var window_map = window_str.split("\n").map(function (row_str) { return row_str.split(""); });
   window_map[ 9] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
-  window_map[10] = [" ","|"," "," "," "," "," ","R","e","r","o","l","l"," ","t","h","i","s"," ","u","n","i","t"," ","(","$","5",")"," "," "," "," "," "," ","|"," "];
+  window_map[10] = [" ","|"," "," "," "," "," ","R","e","r","o","l","l"," ","t","h","i","s"," ","u","n","i","t"," ","(","$","1","0",")"," "," "," "," "," ","|"," "];
   window_map[11] = [" ","+","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","-","+"," "];
-  window_map[12] = [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "];
+  window_map[12] = [" "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," "," ","R","e","s","t",":",String(this.rerollMax - window_type[3])," "," "];
   return window_map;
 };
 
@@ -333,7 +473,7 @@ Ponzu.prototype.point = function (x, y) {
   if (mx < 0 || 80 <= mx || my < 0 || 20 <= my) {
     return false; // no update
 
-  } else if (my == 0) { // log line
+  } else if (my === 0) { // log line
     this.windowType = [ 'center', 'log' ];
 
   } else if (1 <= my && my <= 16) { 
@@ -356,7 +496,7 @@ Ponzu.prototype.point = function (x, y) {
       }
     } else {
       if (1 <= mx && mx <= 38) { // Build
-        this.windowType = [ 'center', 'build', null ];
+        this.windowType = [ 'center', 'build', null, 0 ];
 
       } else if (41 <= mx && mx <= 78) { // Next Turn
         this.next();
@@ -377,7 +517,7 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
 
       // character window
       if (window_type[1] == 'character') {
-        if (26 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
+        if (window_type[2].symbol == '@' && 26 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
           this.windowType = [ 'ui', 'command', window_type[2], (window_type[2].actions || []).concat() ];
 
         } else {
@@ -387,16 +527,30 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
       // build window
       } else if (window_type[1] == 'build') {
         if (1 <= window_x && window_x <= 34 && 9 <= window_y && window_y <= 11) {
-          var created_character = this.windowType[2];
+          if (this.rerollMax == window_type[3]) {
+            this.log.push('You can not rerolling anymore this unit.');
+            return; // reroll max
+          }
+          var created_character = window_type[2];
+          if (created_character ? this.gold < 10 : this.gold < 50) {
+            this.log.push('You don\'t have enough golds.');
+            return; // no golds
+          }
           if (created_character) { // reroll
             this.map[created_character.y][created_character.x] = '.';
+            this.matrix[created_character.y][created_character.x] = false;
             created_character.dead = true;
             --this.unitNum;
+            ++window_type[3];
+            this.gold -= 10;
+
+          } else {
+            this.gold -= 50;
           }
           created_character = this.build();
           if (created_character) {
-            this.windowType[0] = created_character.x < 40 ? 'right' : 'left';
-            this.windowType[2] = created_character;
+            window_type[0] = created_character.x < 40 ? 'right' : 'left';
+            window_type[2] = created_character;
           }
         }
       }
@@ -416,7 +570,7 @@ Ponzu.prototype.pointMap = function (point_x, point_y) {
   }
 };
 
-Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker) {
+Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker, not_me) {
   var nearest;
   var min = 10000;
   this.characters.some(function (value) {
@@ -424,8 +578,12 @@ Ponzu.prototype.getNearCharacter = function (point_x, point_y, not_worker) {
       return false;
     }
     if (value.x == point_x && value.y == point_y) {
-      nearest = value;
-      return true;
+      if (not_me) {
+        return false;
+      } else {
+        nearest = value;
+        return true;
+      }
     }
     var d = Math.abs(point_x - value.x) + Math.abs(point_y - value.y);
     if (d < min) {
@@ -440,7 +598,7 @@ Ponzu.prototype.addCommand = function (character) {
   var window_type = this.windowType;
   var actions = window_type[3];
   if (actions.length < this.commandMax) {
-    if (actions.length == 0) {
+    if (actions.length === 0) {
       return actions.push(['move', character.x, character.y]);
     }
     var last = actions[actions.length - 1];
@@ -529,7 +687,7 @@ Ponzu.prototype.build = function (force_index, force_x, force_y) {
         }
       }
     }
-    if (pos_list.length == 0) {
+    if (pos_list.length === 0) {
       return false;
     }
   }
@@ -587,7 +745,7 @@ Ponzu.prototype.next = function () {
   ++this.turn;
 
   // 1. check game over
-  
+  this.event();
 };
 
 Ponzu.prototype._action = function (character) {
@@ -675,6 +833,7 @@ Ponzu.prototype._action = function (character) {
     var to_x = action[1], to_y = action[2];
     if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1 && character.items.length > 0) {
       var sold_item = character.items.pop();
+      this.soldItems[sold_item] = this.soldItems[sold_item] ? this.soldItems[sold_item] + 1 : 1;
       this.gold += Ponzu.ITEM_LIST[sold_item][2];
       this.log.push(character.name + ' sold ' + sold_item + ' for ' + Ponzu.ITEM_LIST[sold_item][2] + ' golds.');
       ++character.state;
@@ -689,22 +848,115 @@ Ponzu.prototype._action = function (character) {
     }
 
   } else if (action[0] == 'mix') {
-    ++character.state;
+    var item_num = {};
+    var item_keys = [];
+    character.items.forEach(function (item) {
+      if (item_num[item]) {
+        ++item_num[item];
+      } else {
+        item_num[item] = 1;
+        item_keys.push(item);
+      }
+    });
+    var mixed_item;
+    for (var recipe_item in Ponzu.ITEM_RECIPE.mix) {
+      var recipe = Ponzu.ITEM_RECIPE.mix[recipe_item];
+      var mixable = true;
+      for (var required_item in recipe) {
+        if (!item_num[required_item] || item_num[required_item] < recipe[required_item]) {
+          mixable = false;
+          break;
+        }
+      }
+      if (mixable) {
+        mixed_item = recipe_item;
+        break;
+      }
+    }
+    if (mixed_item) {
+      var recipe = Ponzu.ITEM_RECIPE.mix[mixed_item];
+      var used_item = {};
+      character.items = character.items.filter(function (item) {
+        if (recipe[item]) {
+          if (used_item[item] == recipe[item]) {
+            return true;
+          } else {
+            used_item[item] = used_item[item] ? used_item[item] + 1 : 1;
+            return false;
+          }
+        } else {
+          return true;
+        }
+      });
+      character.items.push(mixed_item);
+      ++character.state;
+    }
 
   } else if (action[0] == 'brew') {
-    ++character.state;
+    var brewable_index;
+    character.items.some(function (item, key) {
+      if (Ponzu.ITEM_RECIPE.brew[item]) {
+        brewable_index = key;
+        return true;
+      }
+    });
+    if (typeof brewable_index == 'number') {
+      character.items.splice(brewable_index, 1, Ponzu.ITEM_RECIPE.brew[character.items[brewable_index]]);
+      ++character.state;
+    }
 
   } else if (action[0] == 'juice') {
-    ++character.state;
-
-  } else if (action[0] == 'juice') {
-    ++character.state;
-
+    var juiceable_index;
+    character.items.some(function (item, key) {
+      if (Ponzu.ITEM_RECIPE.juice[item]) {
+        juiceable_index = key;
+        return true;
+      }
+    });
+    if (typeof juiceable_index == 'number') {
+      character.items.splice(juiceable_index, 1, Ponzu.ITEM_RECIPE.juice[character.items[juiceable_index]]);
+      ++character.state;
+    }
   } else if (action[0] == 'steal') {
-    ++character.state;
+    var from_x = character.x, from_y = character.y;
+    var to_character = this.getNearCharacter(character.x, character.y, null, true);
+    if (to_character && Math.abs(from_x - to_character.x) <= 1 && Math.abs(from_y - to_character.y) <= 1 &&
+      to_character.symbol == '@' && to_character.items.length > 0) {
+      var stolen_item = to_character.items.pop();
+      this.log.push(to_character.name + ' had ' + stolen_item + ' stolen by ' + character.type + '.');
+      ++character.state;
+    }
 
   } else if (action[0] == 'slay') {
+    var from_x = character.x, from_y = character.y;
+    var to_character = this.getNearCharacter(character.x, character.y, null, true);
+    if (to_character && Math.abs(from_x - to_character.x) <= 1 && Math.abs(from_y - to_character.y) <= 1 &&
+      to_character.symbol == '@') {
+      this.map[to_character.y][to_character.x] = '.';
+      this.matrix[to_character.y][to_character.x] = false;
+      to_character.dead = true;
+      this.log.push(to_character.name + ' was slayed by ' + character.type + '.');
+      ++character.state;
+    }
+
+  } else if (action[0] == 'bless') {
+    var choise = parseInt(Math.random() * 3);
+    if (choise === 0) {
+      this.log.push('Maximum value of your commands has risen.');
+      this.commandMax += 2;
+    } else if (choise == 1) {
+      this.log.push('Maximum value of all inventories has risen.');
+      this.inventoryMax += 4;
+    } else if (choise == 2) {
+      this.log.push('Maximum value of your rerolls has risen.');
+      this.rerollMax += 1;
+    }
     ++character.state;
+
+  } else if (action[0] == 'wait') {
+    ++character.state;
+
+  } else if (action[0] == 'stop') {
 
   } else {
     throw new Error('Invalid action:' + action[0]);
