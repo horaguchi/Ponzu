@@ -82,14 +82,15 @@ Ponzu.prototype.addCanvas = function (element) {
 
 
 Ponzu.prototype.drawLog = function (initial) {
-  if (!initial && this.oldLog == this.log) {
+  var log = this.log[this.log.length - 1];
+  if (!initial && this.oldLog == log) {
     return;
   }
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
   context.clearRect(0, font_y * 0, font_x * 80, font_y);
-  context.fillText(this.log, 0, font_y * 1); // 1st line
-  this.oldLog = this.log;
+  context.fillText(log, 0, font_y * 1); // 1st line
+  this.oldLog = log;
 };
 
 Ponzu.prototype.drawStatus = function () {
@@ -99,6 +100,7 @@ Ponzu.prototype.drawStatus = function () {
   context.fillText('Turn:' + this.turn + '  $:' + this.gold + '  Units:' + this.unitNum, 0, font_y * 17); // 17th line
 };
 
+Ponzu.COLOR_REGEXP = /^\{([^-]+)-fg\}(.*)\{\/\1-fg\}$/;
 Ponzu.prototype.drawMap = function (initial) {
   var context = this.canvasContext;
   var map = this.getMap();
@@ -111,8 +113,17 @@ Ponzu.prototype.drawMap = function (initial) {
       if (old_map && str == old_map[y][x]) {
         continue;
       }
+      var colors = Ponzu.COLOR_REGEXP.exec(str);
+      if (colors) {
+        var org_fill_stype = context.fillStyle;
+        context.fillStyle = colors[1];
+        str = colors[2];
+      }
       context.clearRect(font_x * x, font_y * (y + 1), font_x, font_y);
       context.fillText(str, font_x * x, font_y * (y + 2)); // + 1 is log line
+      if (colors) {
+        context.fillStyle = org_fill_stype;
+      }
     }
   }
   this.oldMap = map.map(function (row) { return row.concat(); });
