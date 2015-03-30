@@ -38,4 +38,6 @@
 /Users/horaguchi/Ponzu/platforms/android/assets/www/css/index.css \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/img/logo.png \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/js/index.js \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/js/ponzu-html5.js \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/js/ponzu.browserify.js \
 /Users/horaguchi/Ponzu/platforms/android/ant-build/AndroidManifest.xml \

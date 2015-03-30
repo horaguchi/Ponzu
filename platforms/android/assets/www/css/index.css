@@ -24,7 +24,7 @@ body {
     -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
     -webkit-text-size-adjust: none;             /* prevent webkit from resizing text to fit */
     -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
-    background-color:#E4E4E4;
+    background-color:black;
     background-attachment:fixed;
     font-family:'HelveticaNeue-Light', 'HelveticaNeue', Helvetica, Arial, sans-serif;
     font-size:12px;
@@ -37,24 +37,20 @@ body {
 
 /* Portrait layout (default) */
 .app {
-    border: solid 1px black;
     position:absolute;             /* position in the center of the screen */
     left:0;
     top:0;
     right:0;
     bottom:0;
-    height:200px;                   /* text area height */
-    width:400px;                   /* text area width */
+    height:160px;                  /* canvas screen height */
+    width:320px;                   /* canvas screen width */
     text-align:center;
     padding:0px;
     margin:auto;
 }
-
-/* Landscape layout (with min-width) */
-@media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {
-    .app {
-        // hogehoge
-    }
+canvas {
+    height:160px;                  /* canvas screen height */
+    width:320px;                   /* canvas screen width */
 }
 
 h1 {
