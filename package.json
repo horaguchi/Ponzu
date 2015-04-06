@@ -31,7 +31,7 @@
   "dependencies": {
     "pathfinding": "~0.4.16",
     "chance": "~0.7.3",
-    "blessed": "~0.0.38"
+    "blessed": "~0.0.49"
   },
   "devDependencies": {
     "browserify": "~8.1.1"

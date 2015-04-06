@@ -365,7 +365,7 @@ Ponzu.prototype.getCharacterWindowMap = function () {
 };
 
 Ponzu.prototype.getLogWindowMap = function () {
-  var window_str = [ '\n' ].concat(this.log.slice(-11)).concat('\n');
+  var window_str = [ '' ].concat(this.log.slice(-11)).concat('');
   return window_str.map(function (row_str) { return row_str.split(""); });
 };
 

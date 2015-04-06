@@ -9,5 +9,5 @@
     </author>
     <content src="index.html" />
     <access origin="*" />
-    <preference name="orientation" value="default" />
+    <preference name="orientation" value="landscape" />
 </widget>
