@@ -167,7 +167,6 @@ Ponzu.prototype.drawTextImage = function (str, dx, dy) {
 };
 
 Ponzu.prototype.drawTextLine = function (str, dx, dy) {
-  str = str + '                                                                                   '; // for clean
   var dw = this.fontX;
   for (var i = 0; i < str.length; ++i) {
     this.drawTextImage(str.charAt(i), dx + i * dw, dy);

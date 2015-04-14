@@ -1,4 +1,5 @@
 all:
 	npm install -d
-	cp ponzu.browserify.js ponzu-html5.js www/js/
+	cp ponzu-html5-drawImage.js www/js/ponzu-html5.js
+	cp ponzu.browserify.js www/js/
 	cordova run browser

@@ -36,8 +36,16 @@
 /Users/horaguchi/Ponzu/platforms/android/assets/www/index.html \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/js \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/css/index.css \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/LN_EGA8x8.png \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/img/logo.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA16x32_red.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA16x32_white.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA16x32_yellow.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA8x16_red.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA8x16_white.png \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/img/VGA8x16_yellow.png \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/js/index.js \
+/Users/horaguchi/Ponzu/platforms/android/assets/www/js/ponzu-html5-drawImage.js \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/js/ponzu-html5.js \
 /Users/horaguchi/Ponzu/platforms/android/assets/www/js/ponzu.browserify.js \
 /Users/horaguchi/Ponzu/platforms/android/ant-build/AndroidManifest.xml \

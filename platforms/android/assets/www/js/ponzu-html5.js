@@ -1,27 +1,41 @@
+Ponzu.NOT_LOADED = 6;
+Ponzu.TILE_IMAGE_8x16_white = new Image();
+Ponzu.TILE_IMAGE_8x16_white.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_8x16_white.src = "img/VGA8x16_white.png";
+Ponzu.TILE_IMAGE_8x16_red = new Image();
+Ponzu.TILE_IMAGE_8x16_red.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_8x16_red.src = "img/VGA8x16_red.png";
+Ponzu.TILE_IMAGE_8x16_yellow = new Image();
+Ponzu.TILE_IMAGE_8x16_yellow.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_8x16_yellow.src = "img/VGA8x16_yellow.png";
+
+Ponzu.TILE_IMAGE_16x32_white = new Image();
+Ponzu.TILE_IMAGE_16x32_white.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_16x32_white.src = "img/VGA16x32_white.png";
+Ponzu.TILE_IMAGE_16x32_red = new Image();
+Ponzu.TILE_IMAGE_16x32_red.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_16x32_red.src = "img/VGA16x32_red.png";
+Ponzu.TILE_IMAGE_16x32_yellow = new Image();
+Ponzu.TILE_IMAGE_16x32_yellow.onload = function () { --Ponzu.NOT_LOADED; };
+Ponzu.TILE_IMAGE_16x32_yellow.src = "img/VGA16x32_yellow.png";
 
 Ponzu.prototype.resizeCanvas = function () {
   if (this.maxWidth && this.maxWidth == window.innerWidth) {
     return; // nothing to do
   }
   var max_width = window.innerWidth;
-  if (max_width < 400) {
-    this.fontX = 4; this.fontY = 8;
-  } else if (400 <= max_width - 10 && max_width - 10  < 480) {
-    this.fontX = 5; this.fontY = 10;
-  } else if (480 <= max_width - 10 && max_width - 10  < 560) {
-    this.fontX = 6; this.fontY = 12;
-  } else if (560 <= max_width - 10 && max_width - 10  < 640) {
-    this.fontX = 7; this.fontY = 14;
-  } else if (640 <= max_width - 10 && max_width - 10  < 800) {
+  if (max_width - 10 < 1280) {
     this.fontX = 8; this.fontY = 16;
-  } else if (800 <= max_width - 10 && max_width - 10  < 960) {
-    this.fontX = 10; this.fontY = 20;
-  } else if (960 <= max_width - 10 && max_width - 10  < 1200) {
-    this.fontX = 12; this.fontY = 24;
-  } else if (1200 <= max_width - 10 && max_width - 10  < 1600) {
-    this.fontX = 15; this.fontY = 30;
-  } else if (1600 <= max_width - 10) {
-    this.fontX = 20; this.fontY = 40;
+    this.tile = Ponzu.TILE_IMAGE_8x16_white;
+    this.tile_white = Ponzu.TILE_IMAGE_8x16_white;
+    this.tile_red = Ponzu.TILE_IMAGE_8x16_red;
+    this.tile_yellow = Ponzu.TILE_IMAGE_8x16_yellow;
+  } else if (1280 <= max_width - 10) {
+    this.fontX = 16; this.fontY = 32;
+    this.tile = Ponzu.TILE_IMAGE_16x32_white;
+    this.tile_white = Ponzu.TILE_IMAGE_16x32_white;
+    this.tile_red = Ponzu.TILE_IMAGE_16x32_red;
+    this.tile_yellow = Ponzu.TILE_IMAGE_16x32_yellow;
   }
   this.canvasElement.setAttribute('width',  this.fontX * 80);
   this.canvasElement.setAttribute('height', this.fontY * 20);
@@ -30,9 +44,6 @@ Ponzu.prototype.resizeCanvas = function () {
   this.canvasElement.style.width  = (this.fontX * 80) + 'px';
   this.canvasElement.style.height = (this.fontY * 20) + 'px';
   this.canvasContext = this.canvasElement.getContext("2d");
-  this.canvasContext.font = (this.fontY - 2) + "px Monospace"; // for adjustment
-  this.canvasContext.textBaseline = "ideographic";
-  this.canvasContext.fillStyle = 'white';
 
   // initial drawing
   this.drawLog(true);
@@ -89,16 +100,14 @@ Ponzu.prototype.drawLog = function (initial) {
   }
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
-  context.clearRect(0, font_y * 0, font_x * 80, font_y);
-  context.fillText(log, 0, font_y * 1); // 1st line
+  this.drawTextLine(log, 0, 0); // 1st line
   this.oldLog = log;
 };
 
 Ponzu.prototype.drawStatus = function () {
   var context = this.canvasContext;
   var font_x = this.fontX, font_y = this.fontY;
-  context.clearRect(0, font_y * 16, font_x * 80, font_y);
-  context.fillText('Turn:' + this.turn + '  $:' + this.gold + '  Units:' + this.unitNum, 0, font_y * 17); // 17th line
+  this.drawTextLine('Turn:' + this.turn + '  $:' + this.gold + '  Units:' + this.unitNum, 0, font_y * 16); // 17th line
 };
 
 Ponzu.COLOR_REGEXP = /^\{([^-]+)-fg\}(.*)\{\/\1-fg\}$/;
@@ -116,14 +125,16 @@ Ponzu.prototype.drawMap = function (initial) {
       }
       var colors = Ponzu.COLOR_REGEXP.exec(str);
       if (colors) {
-        var org_fill_stype = context.fillStyle;
-        context.fillStyle = colors[1];
+        if (colors[1] == 'red') {
+          this.tile = this.tile_red;
+        } else if (colors[1] == 'yellow') {
+          this.tile = this.tile_yellow;
+        }
         str = colors[2];
       }
-      context.clearRect(font_x * x, font_y * (y + 1), font_x, font_y);
-      context.fillText(str, font_x * x, font_y * (y + 2)); // + 1 is log line
+      this.drawTextImage(str, font_x * x, font_y * (y + 1)); // + 1 is log line
       if (colors) {
-        context.fillStyle = org_fill_stype;
+        this.tile = this.tile_white;
       }
     }
   }
@@ -141,9 +152,25 @@ Ponzu.prototype.drawUI = function (initial) {
       if (old_ui && str == old_ui[y][x]) {
         continue;
       }
-      context.clearRect(font_x * x, font_y * (y + 17), font_x, font_y);
-      context.fillText(str, font_x * x, font_y * (y + 18)); // bottom 3 lines
+      this.drawTextImage(str, font_x * x, font_y * (y + 17)); // bottom 3 lines
     }
   }
   this.oldUI = ui.map(function (row) { return row.concat(); });
 };
+
+Ponzu.prototype.drawTextImage = function (str, dx, dy) {
+  var dw = this.fontX, dh = this.fontY;
+  var context = this.canvasContext;
+  var char_code = str.charCodeAt(0);
+  var sx = char_code % 16, sy = Math.floor(char_code / 16);
+  context.drawImage(this.tile, sx * dw, sy * dh, dw, dh, dx, dy, dw, dh);
+};
+
+Ponzu.prototype.drawTextLine = function (str, dx, dy) {
+  str = str + '                                                                                   '; // for clean
+  var dw = this.fontX;
+  for (var i = 0; i < str.length; ++i) {
+    this.drawTextImage(str.charAt(i), dx + i * dw, dy);
+  }
+};
+
