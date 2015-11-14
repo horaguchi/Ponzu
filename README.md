@@ -1,4 +1,6 @@
 # Ponzu
 Ponzu Roguelike - 7DRL Challenge 2015
 
-[Play](http://horaguchi.github.io/Ponzu/)
+[Web Play](http://horaguchi.github.io/Ponzu/)
+
+[Play Store](https://play.google.com/store/apps/details?id=net.horaguchi.ponzu)
